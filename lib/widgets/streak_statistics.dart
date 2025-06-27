@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:unstack/theme/app_theme.dart';
-import 'package:unstack/widgets/circular_progress_3d.dart';
 
 class StreakStatistics extends StatelessWidget {
   final int currentStreak;
