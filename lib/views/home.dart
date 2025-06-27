@@ -12,7 +12,9 @@ import 'package:unstack/routes/route.dart';
 
 import 'package:unstack/theme/app_theme.dart';
 import 'package:unstack/views/task_details_page.dart';
+import 'package:unstack/views/test_animation.dart';
 import 'package:unstack/widgets/home_app_bar_button.dart';
+import 'package:unstack/widgets/streak_widget.dart';
 import 'package:unstack/widgets/todo_tile.dart';
 import 'package:unstack/widgets/circular_progress_3d.dart';
 
@@ -65,6 +67,25 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void showStreakOverlay(BuildContext context, int streakCount) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: '',
+      barrierColor: Colors.black87,
+      transitionDuration: Duration(milliseconds: 400),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return StreakOverlay(streakCount: streakCount);
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: child,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,69 +101,8 @@ class _HomePageState extends State<HomePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        RouteUtils.pushNamed(
-                          context,
-                          RoutePaths.streakPage,
-                        );
-                      },
-                      child: Container(
-                        height: 50,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                        ),
-                        decoration: BoxDecoration(
-                            gradient: isStreak
-                                ? LinearGradient(colors: [
-                                    Color(0xFFff4b1f),
-                                    Color(0xFFff9068),
-                                  ])
-                                : LinearGradient(colors: [
-                                    AppColors.backgroundSecondary,
-                                    AppColors.backgroundTertiary,
-                                  ]),
-                            borderRadius:
-                                BorderRadius.circular(AppBorderRadius.full),
-                            border: Border.all(
-                              color: isStreak
-                                  ? AppColors.accentOrange
-                                  : AppColors.textMuted,
-                              width: 0.5,
-                            ),
-                            boxShadow: isStreak
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.accentOrange
-                                          .withValues(alpha: 0.2),
-                                      blurRadius: 10,
-                                      spreadRadius: 2,
-                                    ),
-                                  ]
-                                : []),
-                        child: Row(
-                          children: [
-                            Icon(
-                              CupertinoIcons.flame_fill,
-                              color: isStreak
-                                  ? AppColors.whiteColor
-                                  : AppColors.textMuted,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              isStreak
-                                  ? '${streakTracker.currentStreak} ${streakTracker.currentStreak == 1 ? 'streak' : 'streaks'}'
-                                  : '0 streak',
-                              style: TextStyle(
-                                color: AppColors.whiteColor,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    StreakWidget(
+                      currentStreak: streakTracker.currentStreak,
                     )
                         .animate()
                         .slideX(
@@ -317,6 +277,23 @@ class _HomePageState extends State<HomePage> {
                                               cards[index] = task.copyWith(
                                                   isCompleted: value ?? false);
                                             });
+                                            if (cards
+                                                .every((e) => e.isCompleted)) {
+                                              if (context.mounted) {
+                                                Future.microtask(() async {
+                                                  await Future.delayed(Duration(
+                                                      milliseconds: 300));
+                                                  if (context.mounted) {
+                                                    showStreakOverlay(
+                                                      context,
+                                                      streakTracker
+                                                              .currentStreak +
+                                                          1,
+                                                    );
+                                                  }
+                                                });
+                                              }
+                                            }
                                             if (value ?? false) {
                                               _confettiController.play();
                                             }

@@ -93,159 +93,155 @@ class _StreakPageState extends State<StreakPage> {
         ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.3, duration: 400.ms),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child: CupertinoActivityIndicator(
-                  color: AppColors.accentPurple,
-                ),
-              )
-            : SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child:
-                    // Content
-                    Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.sm,
-                  ),
-                  child: Column(children: [
-                    // Calendar Section
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.xl),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.glassBackground,
-                            AppColors.glassBackground.withValues(alpha: 0.05),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                        border: Border.all(
-                          color: AppColors.glassBorder,
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 24,
-                            offset: const Offset(0, 8),
-                          ),
-                          BoxShadow(
-                            color:
-                                AppColors.accentOrange.withValues(alpha: 0.05),
-                            blurRadius: 32,
-                            offset: const Offset(0, 16),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(AppSpacing.sm),
-                                decoration: BoxDecoration(
-                                  color: AppColors.accentOrange
-                                      .withValues(alpha: 0.1),
-                                  borderRadius:
-                                      BorderRadius.circular(AppBorderRadius.md),
-                                ),
-                                child: Icon(
-                                  CupertinoIcons.calendar,
-                                  color: AppColors.accentOrange,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.md),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Monthly Calendar',
-                                      style: AppTextStyles.h3.copyWith(
-                                        color: AppColors.textPrimary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: AppSpacing.xs),
-                                    Text(
-                                      'Track your daily task completion streaks',
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.xl),
-                          StreakCalendar(
-                            selectedMonth: _selectedMonth,
-                            onMonthChanged: _onMonthChanged,
-                            completionData:
-                                streakTracker.getMonthData(_selectedMonth),
-                          ),
-                        ],
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(delay: 500.ms)
-                        .slideY(begin: 0.2, duration: 500.ms),
-                    const SizedBox(height: AppSpacing.xl),
-                    // Statistics Section
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.xl),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.glassBackground,
-                            AppColors.glassBackground.withValues(alpha: 0.05),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                        border: Border.all(
-                          color: AppColors.glassBorder,
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 24,
-                            offset: const Offset(0, 8),
-                          ),
-                          BoxShadow(
-                            color:
-                                AppColors.accentPurple.withValues(alpha: 0.05),
-                            blurRadius: 32,
-                            offset: const Offset(0, 16),
-                          ),
-                        ],
-                      ),
-                      child: StreakStatistics(
-                        currentStreak: streakTracker.currentStreak,
-                        longestStreak: streakTracker.longestStreak,
-                        totalCompletedDays: streakTracker.totalCompletedDays,
-                        monthCompletionPercentage: streakTracker
-                            .getMonthCompletionPercentage(_selectedMonth),
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(delay: 300.ms)
-                        .slideY(begin: 0.2, duration: 500.ms),
-
-                    const SizedBox(height: AppSpacing.xl),
-                  ]),
-                ),
+      body: _isLoading
+          ? const Center(
+              child: CupertinoActivityIndicator(
+                color: AppColors.accentPurple,
               ),
-      ),
+            )
+          : SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child:
+                  // Content
+                  Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Column(children: [
+                  // Calendar Section
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.glassBackground,
+                          AppColors.glassBackground.withValues(alpha: 0.05),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                      border: Border.all(
+                        color: AppColors.glassBorder,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                        BoxShadow(
+                          color: AppColors.accentOrange.withValues(alpha: 0.05),
+                          blurRadius: 32,
+                          offset: const Offset(0, 16),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(AppSpacing.sm),
+                              decoration: BoxDecoration(
+                                color: AppColors.accentOrange
+                                    .withValues(alpha: 0.1),
+                                borderRadius:
+                                    BorderRadius.circular(AppBorderRadius.md),
+                              ),
+                              child: Icon(
+                                CupertinoIcons.calendar,
+                                color: AppColors.accentOrange,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Monthly Calendar',
+                                    style: AppTextStyles.h3.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  Text(
+                                    'Track your daily task completion streaks',
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        StreakCalendar(
+                          selectedMonth: _selectedMonth,
+                          onMonthChanged: _onMonthChanged,
+                          completionData:
+                              streakTracker.getMonthData(_selectedMonth),
+                        ),
+                      ],
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(delay: 500.ms)
+                      .slideY(begin: 0.2, duration: 500.ms),
+                  const SizedBox(height: AppSpacing.xl),
+                  // Statistics Section
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.glassBackground,
+                          AppColors.glassBackground.withValues(alpha: 0.05),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                      border: Border.all(
+                        color: AppColors.glassBorder,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                        BoxShadow(
+                          color: AppColors.accentPurple.withValues(alpha: 0.05),
+                          blurRadius: 32,
+                          offset: const Offset(0, 16),
+                        ),
+                      ],
+                    ),
+                    child: StreakStatistics(
+                      currentStreak: streakTracker.currentStreak,
+                      longestStreak: streakTracker.longestStreak,
+                      totalCompletedDays: streakTracker.totalCompletedDays,
+                      monthCompletionPercentage: streakTracker
+                          .getMonthCompletionPercentage(_selectedMonth),
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(delay: 300.ms)
+                      .slideY(begin: 0.2, duration: 500.ms),
+
+                  const SizedBox(height: AppSpacing.xl),
+                ]),
+              ),
+            ),
     );
   }
 }

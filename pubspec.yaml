@@ -40,6 +40,8 @@ dependencies:
   swipe_deck: ^1.1.0
   confetti: ^0.8.0
   logger: ^2.6.0
+  lottie: ^3.3.1
+
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +69,7 @@ flutter:
   assets:
     - assets/images/
     - assets/logo/
+    - assets/animation/
 
   fonts:
     - family: Montserrat

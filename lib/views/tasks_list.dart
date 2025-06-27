@@ -20,6 +20,7 @@ class _TasksListPageState extends State<TasksListPage>
   late List<Task> _allTasks;
   late List<Task> _remainingTasks;
   late List<Task> _completedTasks;
+  bool isAnimationDone = false;
 
   TaskSortOption _currentSortOption = TaskSortOption.priority;
   bool _isAscending = false;
@@ -88,25 +89,6 @@ class _TasksListPageState extends State<TasksListPage>
     _allTasks.removeWhere((t) => t.id == task.id);
     _filterAndSortTasks();
     HapticFeedback.heavyImpact();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Task "${task.title}" deleted'),
-        backgroundColor: AppColors.surfaceCard,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        ),
-        action: SnackBarAction(
-          label: 'Undo',
-          textColor: AppColors.accentPurple,
-          onPressed: () {
-            _allTasks.add(task);
-            _filterAndSortTasks();
-          },
-        ),
-      ),
-    );
   }
 
   void _showSortOptions() {
@@ -133,8 +115,11 @@ class _TasksListPageState extends State<TasksListPage>
             // Remaining Tasks Tab
             ExpansionTile(
               initiallyExpanded: true,
+              iconColor: AppColors.accentOrange,
               shape: InputBorder.none,
               title: Text('Remaining Tasks'),
+              childrenPadding: EdgeInsets.zero,
+              tilePadding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               children: [
                 SizedBox(
                     height: MediaQuery.of(context).size.height * 0.65,
@@ -144,6 +129,8 @@ class _TasksListPageState extends State<TasksListPage>
 
             ExpansionTile(
               shape: InputBorder.none,
+              tilePadding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              iconColor: AppColors.accentOrange,
               title: Text('Completed Tasks'),
               children: [
                 SizedBox(
@@ -267,92 +254,125 @@ class _TasksListPageState extends State<TasksListPage>
     }
 
     return buildScrollableWithFade(
-      child: ListView.builder(
-        padding: const EdgeInsets.only(
-          bottom: AppSpacing.lg,
-        ),
-        itemCount: tasks.length,
-        itemBuilder: (context, index) {
-          final task = tasks[index];
-          return Dismissible(
-            key: Key(task.id),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: AppSpacing.xl),
-              margin: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.xs,
-              ),
+      child: ClipRRect(
+        borderRadius: BorderRadiusGeometry.all(Radius.circular(24)),
+        child: ReorderableListView.builder(
+          onReorder: (oldIndex, newIndex) {
+            setState(() {
+              final task = _remainingTasks.elementAt(oldIndex);
+              _remainingTasks.removeAt(oldIndex);
+              _remainingTasks.insert(newIndex, task);
+            });
+          },
+          padding: const EdgeInsets.only(
+            bottom: AppSpacing.lg,
+            top: AppSpacing.sm,
+            // left: AppSpacing.md,
+            // right: AppSpacing.md,
+          ),
+          buildDefaultDragHandles: true,
+          proxyDecorator: (child, index, animation) {
+            return Container(
+              // margin: EdgeInsets.all(100),
               decoration: BoxDecoration(
-                color: AppColors.statusError,
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                color: Colors.white12,
+                borderRadius: BorderRadius.all(
+                  Radius.circular(24),
+                ),
               ),
-              child: Icon(
-                CupertinoIcons.delete,
-                color: AppColors.textInverse,
-                size: 24,
-              ),
-            ),
-            confirmDismiss: (direction) async {
-              HapticFeedback.heavyImpact();
-              return await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      backgroundColor: AppColors.surfaceCard,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                      ),
-                      title: Text(
-                        'Delete Task',
-                        style: AppTextStyles.h3.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      content: Text(
-                        'Are you sure you want to delete "${task.title}"?',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(color: AppColors.textSecondary),
+              child: child,
+            );
+          },
+          itemCount: tasks.length,
+          itemBuilder: (context, index) {
+            final task = tasks[index];
+            return Dismissible(
+                key: Key(task.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: AppSpacing.xl),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.accentRed,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  ),
+                  child: Icon(
+                    CupertinoIcons.delete,
+                    color: AppColors.whiteColor,
+                    size: 24,
+                  ),
+                ),
+                confirmDismiss: (direction) async {
+                  HapticFeedback.heavyImpact();
+                  return await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: AppColors.surfaceCard,
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppBorderRadius.xl),
                           ),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          child: Text(
-                            'Delete',
-                            style: TextStyle(color: AppColors.statusError),
+                          title: Text(
+                            'Delete Task',
+                            style: AppTextStyles.h3.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
                           ),
+                          content: Text(
+                            'Are you sure you want to delete "${task.title}"?',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: Text(
+                                'Cancel',
+                                style:
+                                    TextStyle(color: AppColors.textSecondary),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(color: AppColors.statusError),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ) ??
-                  false;
-            },
-            onDismissed: (direction) => _deleteTask(task),
-            child: TaskCard(
-              task: task,
-              onToggleComplete: (isCompleted) =>
-                  _toggleTaskCompletion(task, isCompleted),
-              onTap: () {
-                // TODO: Navigate to task details
-              },
-            )
-                .animate()
-                .slideX(
-                  begin: 0.3,
-                  duration: Duration(milliseconds: 300 + (index * 50)),
-                  curve: Curves.easeOut,
+                      ) ??
+                      false;
+                },
+                onDismissed: (direction) => _deleteTask(task),
+                child: TaskCard(
+                  task: task,
+                  onToggleComplete: (isCompleted) =>
+                      _toggleTaskCompletion(task, isCompleted),
+                  onTap: () {
+                    // TODO: Navigate to task details
+                  },
                 )
-                .fadeIn(delay: Duration(milliseconds: 400 + (index * 50))),
-          );
-        },
+                    .animate(
+                      autoPlay: !isAnimationDone,
+                      onComplete: (controller) {
+                        setState(() {
+                          isAnimationDone = controller.isCompleted;
+                        });
+                      },
+                    )
+                    .slideX(
+                      begin: isAnimationDone ? 0 : 0.3,
+                      duration: Duration(milliseconds: 300 + (index * 50)),
+                      curve: Curves.easeOut,
+                    ));
+          },
+        ),
       ),
     );
   }

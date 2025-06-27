@@ -124,7 +124,8 @@ class _CircularProgressIndicator3DState
   @override
   Widget build(BuildContext context) {
     final primaryColor = widget.primaryColor ?? AppColors.accentPurple;
-    final backgroundColor = widget.backgroundColor ?? AppColors.surfaceCard;
+    final backgroundColor =
+        widget.backgroundColor ?? const Color.fromARGB(255, 38, 38, 38);
     final progressPercentage = widget.totalTasks > 0
         ? (widget.completedTasks / widget.totalTasks * 100).round()
         : 0;

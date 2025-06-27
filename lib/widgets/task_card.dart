@@ -1,7 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:unstack/models/task.dart';
 import 'package:unstack/theme/app_theme.dart';
 
@@ -97,10 +95,9 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
             child: Container(
               margin: EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
-                vertical: widget.isCompact ? AppSpacing.xs : AppSpacing.sm,
+                vertical: AppSpacing.sm,
               ),
-              padding: EdgeInsets.all(
-                  widget.isCompact ? AppSpacing.md : AppSpacing.lg),
+              padding: EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                 gradient: LinearGradient(
@@ -128,126 +125,73 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header with checkbox and priority
-                  Row(
-                    children: [
-                      // Custom checkbox with animation
-                      GestureDetector(
-                        onTap: () =>
-                            _handleToggleComplete(!widget.task.isCompleted),
-                        child: AnimatedBuilder(
-                          animation: _checkController,
-                          builder: (context, child) {
-                            return Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: widget.task.isCompleted
-                                      ? AppColors.statusSuccess
-                                      : AppColors.textMuted,
-                                  width: 2,
-                                ),
-                                color: widget.task.isCompleted
-                                    ? AppColors.statusSuccess
-                                    : Colors.transparent,
-                              ),
-                              child: widget.task.isCompleted
-                                  ? Icon(
-                                      CupertinoIcons.check_mark,
-                                      size: 16,
-                                      color: AppColors.textInverse,
-                                    ).animate().scale(
-                                        duration: 200.ms,
-                                        curve: Curves.elasticOut,
-                                      )
-                                  : null,
-                            );
-                          },
-                        ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.task.priority.color.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                      border: Border.all(
+                        color:
+                            widget.task.priority.color.withValues(alpha: 0.5),
+                        width: 1,
                       ),
-
-                      const SizedBox(width: AppSpacing.md),
-
-                      // Title and description
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.task.title,
-                              style: AppTextStyles.bodyLarge.copyWith(
-                                color: widget.task.isCompleted
-                                    ? AppColors.textMuted
-                                    : AppColors.textPrimary,
-                                decoration: widget.task.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (widget.task.description.isNotEmpty &&
-                                !widget.isCompact)
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(top: AppSpacing.xs),
-                                child: Text(
-                                  widget.task.description,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          widget.task.priority.icon,
+                          size: 12,
+                          color: widget.task.priority.color,
                         ),
-                      ),
-
-                      // Priority indicator
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              widget.task.priority.color.withValues(alpha: 0.2),
-                          borderRadius:
-                              BorderRadius.circular(AppBorderRadius.full),
-                          border: Border.all(
-                            color: widget.task.priority.color
-                                .withValues(alpha: 0.5),
-                            width: 1,
+                        const SizedBox(width: 4),
+                        Text(
+                          widget.task.priority.label,
+                          style: AppTextStyles.caption.copyWith(
+                            color: widget.task.priority.color,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              widget.task.priority.icon,
-                              size: 12,
-                              color: widget.task.priority.color,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              widget.task.priority.label,
-                              style: AppTextStyles.caption.copyWith(
-                                color: widget.task.priority.color,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(
+                    height: AppSpacing.sm,
+                  ),
+                  Text(
+                    widget.task.title,
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: widget.task.isCompleted
+                          ? AppColors.textMuted
+                          : AppColors.textPrimary,
+                      decoration: widget.task.isCompleted
+                          ? TextDecoration.lineThrough
+                          : null,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (widget.task.description.isNotEmpty && !widget.isCompact)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.xs),
+                      child: Text(
+                        widget.task.description,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                 ],
               ),
             ),
+
+            // Priority indicator
           ),
         );
       },
