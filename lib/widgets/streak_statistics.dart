@@ -66,7 +66,7 @@ class StreakStatistics extends StatelessWidget {
         Column(
           children: [
             // Current Streak (Featured)
-            Container(
+            SizedBox(
               height: 180,
               child: _StreakCard(
                 title: 'Current Streak',

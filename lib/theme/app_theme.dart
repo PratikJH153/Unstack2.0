@@ -21,6 +21,7 @@ class AppColors {
   static const Color accentYellow = Color(0xFFF59E0B);
   static const Color accentPink = Color(0xFFEC4899);
   static const Color accentRed = Color(0xFFEF4444);
+  static const Color redShade = Color(0xFFf84e56);
   static const Color accentOrange = Color(0xFFF97316);
 
   // Text colors

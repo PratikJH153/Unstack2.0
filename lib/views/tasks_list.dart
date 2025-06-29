@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:unstack/models/task.dart';
+import 'package:unstack/routes/route.dart';
 import 'package:unstack/theme/app_theme.dart';
 import 'package:unstack/widgets/buildScrollableWithFade.dart';
 import 'package:unstack/widgets/task_card.dart';
 import 'package:unstack/widgets/home_app_bar_button.dart';
+import 'package:unstack/routes/route_paths.dart';
 
 class TasksListPage extends StatefulWidget {
   const TasksListPage({super.key});
@@ -195,7 +197,7 @@ class _TasksListPageState extends State<TasksListPage>
           // Add button
           HomeAppBarButton(
             onPressed: () {
-              // TODO: Implement add task functionality
+              RouteUtils.pushNamed(context, RoutePaths.addTaskPage);
             },
             icon: CupertinoIcons.add,
           ),
@@ -203,9 +205,9 @@ class _TasksListPageState extends State<TasksListPage>
       ),
     )
         .animate()
-        .slideY(
-          begin: -0.3,
-          duration: 500.ms,
+        .slideX(
+          begin: 0.3,
+          duration: 400.ms,
           curve: Curves.easeOut,
         )
         .fadeIn();
@@ -355,7 +357,13 @@ class _TasksListPageState extends State<TasksListPage>
                   onToggleComplete: (isCompleted) =>
                       _toggleTaskCompletion(task, isCompleted),
                   onTap: () {
-                    // TODO: Navigate to task details
+                    Navigator.of(context).pushNamed(
+                      RoutePaths.taskDetailsPage,
+                      arguments: {
+                        'heroTag': 'task_${task.id}',
+                        'task': task,
+                      },
+                    );
                   },
                 )
                     .animate(
