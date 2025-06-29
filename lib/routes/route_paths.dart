@@ -5,5 +5,7 @@ class RoutePaths {
   static const String nameInputScreen = '/nameInputScreen';
   static const String homePage = '/homePage';
   static const String tasksListPage = '/tasksListPage';
+  static const String taskDetailsPage = '/taskDetailsPage';
   static const String streakPage = '/streakPage';
+  static const String addTaskPage = '/addTaskPage';
 }

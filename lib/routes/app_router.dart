@@ -7,8 +7,10 @@ import 'package:unstack/routes/slide_route_builder.dart';
 import 'package:unstack/screens/name_input_screen.dart';
 import 'package:unstack/screens/onboarding_screen.dart';
 import 'package:unstack/screens/splash_screen.dart';
+import 'package:unstack/views/add_task_page.dart';
 import 'package:unstack/views/home.dart';
 import 'package:unstack/views/tasks_list.dart';
+import 'package:unstack/views/task_details_page.dart';
 import 'package:unstack/views/streak_page.dart';
 import 'route_paths.dart';
 
@@ -50,9 +52,23 @@ class AppRouter {
           page: const TasksListPage(),
           settings: settings,
         );
+      case RoutePaths.taskDetailsPage:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          page: TaskDetailsPage(
+            heroTag: args?['heroTag'] ?? 'task_details',
+            task: args?['task'],
+          ),
+          settings: settings,
+        );
       case RoutePaths.streakPage:
         return _buildRoute(
           page: const StreakPage(),
+          settings: settings,
+        );
+      case RoutePaths.addTaskPage:
+        return _buildRoute(
+          page: const AddTaskPage(),
           settings: settings,
         );
       default:

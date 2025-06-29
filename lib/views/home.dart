@@ -75,7 +75,7 @@ class _HomePageState extends State<HomePage> {
       barrierColor: Colors.black87,
       transitionDuration: Duration(milliseconds: 400),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return StreakOverlay(streakCount: streakCount);
+        return ModernStreakOverlay(streakCount: streakCount);
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(
@@ -130,7 +130,12 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(width: AppSpacing.md),
                         HomeAppBarButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            RouteUtils.pushNamed(
+                              context,
+                              RoutePaths.addTaskPage,
+                            );
+                          },
                           icon: CupertinoIcons.add,
                         ),
                       ],
@@ -280,18 +285,11 @@ class _HomePageState extends State<HomePage> {
                                             if (cards
                                                 .every((e) => e.isCompleted)) {
                                               if (context.mounted) {
-                                                Future.microtask(() async {
-                                                  await Future.delayed(Duration(
-                                                      milliseconds: 300));
-                                                  if (context.mounted) {
-                                                    showStreakOverlay(
-                                                      context,
-                                                      streakTracker
-                                                              .currentStreak +
-                                                          1,
-                                                    );
-                                                  }
-                                                });
+                                                showStreakOverlay(
+                                                  context,
+                                                  streakTracker.currentStreak +
+                                                      1,
+                                                );
                                               }
                                             }
                                             if (value ?? false) {

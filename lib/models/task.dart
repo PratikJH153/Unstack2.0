@@ -35,7 +35,7 @@ enum TaskPriority {
   IconData get icon {
     switch (this) {
       case TaskPriority.low:
-        return Icons.flag_outlined;
+        return Icons.flag;
       case TaskPriority.medium:
         return Icons.flag;
       case TaskPriority.high:

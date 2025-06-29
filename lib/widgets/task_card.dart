@@ -66,18 +66,6 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
     _scaleController.reverse();
   }
 
-  void _handleToggleComplete(bool? value) {
-    if (value != null) {
-      if (value) {
-        _checkController.forward();
-      } else {
-        _checkController.reverse();
-      }
-      widget.onToggleComplete?.call(value);
-      HapticFeedback.mediumImpact();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
