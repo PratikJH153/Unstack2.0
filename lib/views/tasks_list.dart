@@ -2,13 +2,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:unstack/models/task.dart';
 import 'package:unstack/routes/route.dart';
 import 'package:unstack/theme/app_theme.dart';
 import 'package:unstack/widgets/buildScrollableWithFade.dart';
 import 'package:unstack/widgets/task_card.dart';
 import 'package:unstack/widgets/home_app_bar_button.dart';
-import 'package:unstack/routes/route_paths.dart';
 
 class TasksListPage extends StatefulWidget {
   const TasksListPage({super.key});
@@ -47,25 +47,12 @@ class _TasksListPageState extends State<TasksListPage>
         case TaskSortOption.dateCreated:
           comparison = a.createdAt.compareTo(b.createdAt);
           break;
-        case TaskSortOption.dueDate:
-          if (a.dueDate == null && b.dueDate == null) {
-            comparison = 0;
-          } else if (a.dueDate == null) {
-            comparison = 1;
-          } else if (b.dueDate == null) {
-            comparison = -1;
-          } else {
-            comparison = a.dueDate!.compareTo(b.dueDate!);
-          }
-          break;
+
         case TaskSortOption.priority:
-          comparison = b.priority.index.compareTo(a.priority.index);
+          comparison = a.priority.index.compareTo(b.priority.index);
           break;
         case TaskSortOption.alphabetical:
-          comparison = a.title.toLowerCase().compareTo(b.title.toLowerCase());
-          break;
-        case TaskSortOption.pomodoroCount:
-          comparison = b.pomodoroCount.compareTo(a.pomodoroCount);
+          comparison = b.title.toLowerCase().compareTo(a.title.toLowerCase());
           break;
       }
       return _isAscending ? comparison : -comparison;
@@ -104,28 +91,42 @@ class _TasksListPageState extends State<TasksListPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundPrimary,
+      appBar: PreferredSize(
+        preferredSize: Size(double.infinity, 75),
+        child: Container(
+          margin: EdgeInsets.only(top: 40),
+          child: _buildAppBar(),
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(
-              height: AppSpacing.xxl,
-            ),
-            // Custom App Bar
-            _buildAppBar(),
-
             // Remaining Tasks Tab
             ExpansionTile(
               initiallyExpanded: true,
               iconColor: AppColors.accentOrange,
               shape: InputBorder.none,
-              title: Text('Remaining Tasks'),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Remaining Tasks'),
+                  IconButton(
+                      onPressed: () {
+                        _showSortOptions();
+                      },
+                      icon: Icon(CupertinoIcons.sort_down))
+                ],
+              ),
               childrenPadding: EdgeInsets.zero,
               tilePadding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               children: [
                 SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.65,
-                    child: _buildTaskList(_remainingTasks, false))
+                  height: MediaQuery.of(context).size.height * 0.65,
+                  child: _buildTaskList(
+                    _remainingTasks,
+                    false,
+                  ),
+                )
               ],
             ),
 
@@ -185,14 +186,6 @@ class _TasksListPageState extends State<TasksListPage>
               ],
             ),
           ),
-
-          // Sort button
-          HomeAppBarButton(
-            onPressed: _showSortOptions,
-            icon: CupertinoIcons.sort_down,
-          ),
-
-          const SizedBox(width: AppSpacing.md),
 
           // Add button
           HomeAppBarButton(
@@ -268,7 +261,7 @@ class _TasksListPageState extends State<TasksListPage>
           },
           padding: const EdgeInsets.only(
             bottom: AppSpacing.lg,
-            top: AppSpacing.sm,
+
             // left: AppSpacing.md,
             // right: AppSpacing.md,
           ),
@@ -277,7 +270,7 @@ class _TasksListPageState extends State<TasksListPage>
             return Container(
               // margin: EdgeInsets.all(100),
               decoration: BoxDecoration(
-                color: Colors.white12,
+                color: AppColors.surfaceCard,
                 borderRadius: BorderRadius.all(
                   Radius.circular(24),
                 ),
@@ -288,70 +281,133 @@ class _TasksListPageState extends State<TasksListPage>
           itemCount: tasks.length,
           itemBuilder: (context, index) {
             final task = tasks[index];
-            return Dismissible(
+            return Slidable(
                 key: Key(task.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: AppSpacing.xl),
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.accentRed,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  ),
-                  child: Icon(
-                    CupertinoIcons.delete,
-                    color: AppColors.whiteColor,
-                    size: 24,
-                  ),
-                ),
-                confirmDismiss: (direction) async {
-                  HapticFeedback.heavyImpact();
-                  return await showDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          backgroundColor: AppColors.surfaceCard,
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppBorderRadius.xl),
-                          ),
-                          title: Text(
-                            'Delete Task',
-                            style: AppTextStyles.h3.copyWith(
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          content: Text(
-                            'Are you sure you want to delete "${task.title}"?',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              child: Text(
-                                'Cancel',
-                                style:
-                                    TextStyle(color: AppColors.textSecondary),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              child: Text(
-                                'Delete',
-                                style: TextStyle(color: AppColors.statusError),
-                              ),
-                            ),
-                          ],
+                endActionPane: ActionPane(
+                  motion: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      children: [
+                        SlidableAction(
+                          onPressed: (context) async {
+                            HapticFeedback.heavyImpact();
+                            final result = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    backgroundColor: AppColors.surfaceCard,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          AppBorderRadius.xl),
+                                    ),
+                                    title: Text(
+                                      'Delete Task',
+                                      style: AppTextStyles.h3.copyWith(
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    content: Text(
+                                      'Are you sure you want to delete "${task.title}"?',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(false),
+                                        child: Text(
+                                          'Cancel',
+                                          style: TextStyle(
+                                              color: AppColors.textSecondary),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(true),
+                                        child: Text(
+                                          'Delete',
+                                          style: TextStyle(
+                                              color: AppColors.statusError),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ) ??
+                                false;
+                            if (result) {
+                              _deleteTask(task);
+                            }
+                          },
+                          backgroundColor: AppColors.surfaceOverlay,
+                          foregroundColor: AppColors.whiteColor,
+                          borderRadius: BorderRadius.all(Radius.circular(24)),
+                          icon: CupertinoIcons.pencil,
+                          label: 'Edit',
                         ),
-                      ) ??
-                      false;
-                },
-                onDismissed: (direction) => _deleteTask(task),
+                        const SizedBox(
+                          width: 6,
+                        ),
+                        SlidableAction(
+                          onPressed: (context) async {
+                            HapticFeedback.heavyImpact();
+                            final result = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    backgroundColor: AppColors.surfaceCard,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          AppBorderRadius.xl),
+                                    ),
+                                    title: Text(
+                                      'Delete Task',
+                                      style: AppTextStyles.h3.copyWith(
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    content: Text(
+                                      'Are you sure you want to delete "${task.title}"?',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(false),
+                                        child: Text(
+                                          'Cancel',
+                                          style: TextStyle(
+                                              color: AppColors.textSecondary),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(true),
+                                        child: Text(
+                                          'Delete',
+                                          style: TextStyle(
+                                              color: AppColors.statusError),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ) ??
+                                false;
+                            if (result) {
+                              _deleteTask(task);
+                            }
+                          },
+                          backgroundColor: AppColors.accentRed,
+                          foregroundColor: AppColors.whiteColor,
+                          borderRadius: BorderRadius.all(Radius.circular(24)),
+                          icon: CupertinoIcons.delete,
+                          label: 'Delete',
+                        ),
+                      ],
+                    ),
+                  ),
+                  children: [],
+                ),
                 child: TaskCard(
                   task: task,
                   onToggleComplete: (isCompleted) =>
@@ -501,14 +557,10 @@ class _TasksListPageState extends State<TasksListPage>
     switch (option) {
       case TaskSortOption.dateCreated:
         return CupertinoIcons.calendar;
-      case TaskSortOption.dueDate:
-        return CupertinoIcons.calendar_badge_plus;
       case TaskSortOption.priority:
         return CupertinoIcons.flag;
       case TaskSortOption.alphabetical:
         return CupertinoIcons.textformat_abc;
-      case TaskSortOption.pomodoroCount:
-        return CupertinoIcons.timer;
     }
   }
 }

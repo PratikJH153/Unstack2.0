@@ -6,12 +6,15 @@ import 'package:unstack/routes/dismissible_wrapper.dart';
 import 'package:unstack/routes/slide_route_builder.dart';
 import 'package:unstack/screens/name_input_screen.dart';
 import 'package:unstack/screens/onboarding_screen.dart';
+import 'package:unstack/screens/sign_in_page.dart';
 import 'package:unstack/screens/splash_screen.dart';
 import 'package:unstack/views/add_task_page.dart';
 import 'package:unstack/views/home.dart';
+import 'package:unstack/views/profile_page.dart';
 import 'package:unstack/views/tasks_list.dart';
 import 'package:unstack/views/task_details_page.dart';
 import 'package:unstack/views/streak_page.dart';
+import 'package:unstack/views/progress_analytics_page.dart';
 import 'route_paths.dart';
 
 class AppRouter {
@@ -68,7 +71,27 @@ class AppRouter {
         );
       case RoutePaths.addTaskPage:
         return _buildRoute(
-          page: const AddTaskPage(),
+          page: AddTaskPage(
+            routeSettings: settings,
+          ),
+          settings: settings,
+        );
+      case RoutePaths.profilePage:
+        return _buildRoute(
+          page: const ProfilePage(),
+          settings: settings,
+        );
+      case RoutePaths.signInPage:
+        return _buildRoute(
+          page: const SignInPage(),
+          settings: settings,
+        );
+      case RoutePaths.progressAnalyticsPage:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          page: ProgressAnalyticsPage(
+            tasks: args?['tasks'] ?? [],
+          ),
           settings: settings,
         );
       default:

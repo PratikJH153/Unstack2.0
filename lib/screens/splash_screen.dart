@@ -109,21 +109,6 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _navigateToOnboarding() {
-    // Navigator.of(context).pushReplacement(
-    //   PageRouteBuilder(
-    //     pageBuilder: (context, animation, secondaryAnimation) =>
-    //         const OnboardingScreen(),
-    //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-    //       return FadeTransition(
-    //         opacity: animation.drive(
-    //           CurveTween(curve: Curves.easeInOut),
-    //         ),
-    //         child: child,
-    //       );
-    //     },
-    //     transitionDuration: const Duration(milliseconds: 800),
-    //   ),
-    // );
     RouteUtils.pushReplacementNamed(
       context,
       RoutePaths.onboardingScreen,
@@ -131,21 +116,6 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _navigateToHome() {
-    // Navigator.of(context).pushReplacement(
-    //   PageRouteBuilder(
-    //     pageBuilder: (context, animation, secondaryAnimation) =>
-    //         const HomePage(),
-    //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-    //       return FadeTransition(
-    //         opacity: animation.drive(
-    //           CurveTween(curve: Curves.easeInOut),
-    //         ),
-    //         child: child,
-    //       );
-    //     },
-    //     transitionDuration: const Duration(milliseconds: 800),
-    //   ),
-    // );
     RouteUtils.pushReplacementNamed(
       context,
       RoutePaths.homePage,
@@ -157,6 +127,7 @@ class _SplashScreenState extends State<SplashScreen>
     _logoController.dispose();
     _breathingController.dispose();
     _textController.dispose();
+
     super.dispose();
   }
 

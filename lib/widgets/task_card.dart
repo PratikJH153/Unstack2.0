@@ -68,121 +68,129 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _scaleController,
-      builder: (context, child) {
-        final scale = 1.0 - (_scaleController.value * 0.02);
+    return SizedBox(
+      width: double.infinity,
+      child: AnimatedBuilder(
+        animation: _scaleController,
+        builder: (context, child) {
+          final scale = 1.0 - (_scaleController.value * 0.02);
 
-        return Transform.scale(
-          scale: scale,
-          child: GestureDetector(
-            onTapDown: _handleTapDown,
-            onTapUp: _handleTapUp,
-            onTapCancel: _handleTapCancel,
-            onTap: widget.onTap,
-            child: Container(
-              margin: EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
-              ),
-              padding: EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.glassBackground,
-                    AppColors.glassBackground.withValues(alpha: 0.05),
+          return Transform.scale(
+            scale: scale,
+            child: GestureDetector(
+              onTapDown: _handleTapDown,
+              onTapUp: _handleTapUp,
+              onTapCancel: _handleTapCancel,
+              onTap: widget.onTap,
+              child: Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.lg,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xxl),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.glassBackground,
+                      AppColors.glassBackground.withValues(alpha: 0.05),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: widget.task.isCompleted
+                        ? AppColors.statusSuccess.withValues(alpha: 0.3)
+                        : AppColors.glassBorder,
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
                   ],
                 ),
-                border: Border.all(
-                  color: widget.task.isCompleted
-                      ? AppColors.statusSuccess.withValues(alpha: 0.3)
-                      : AppColors.glassBorder,
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: AppSpacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: widget.task.priority.color.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                      border: Border.all(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      decoration: BoxDecoration(
                         color:
-                            widget.task.priority.color.withValues(alpha: 0.5),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          widget.task.priority.icon,
-                          size: 12,
-                          color: widget.task.priority.color,
+                            widget.task.priority.color.withValues(alpha: 0.2),
+                        borderRadius:
+                            BorderRadius.circular(AppBorderRadius.full),
+                        border: Border.all(
+                          color:
+                              widget.task.priority.color.withValues(alpha: 0.5),
+                          width: 1,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.task.priority.label,
-                          style: AppTextStyles.caption.copyWith(
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            widget.task.priority.icon,
+                            size: 12,
                             color: widget.task.priority.color,
-                            fontWeight: FontWeight.w600,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(
-                    height: AppSpacing.sm,
-                  ),
-                  Text(
-                    widget.task.title,
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: widget.task.isCompleted
-                          ? AppColors.textMuted
-                          : AppColors.textPrimary,
-                      decoration: widget.task.isCompleted
-                          ? TextDecoration.lineThrough
-                          : null,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (widget.task.description.isNotEmpty && !widget.isCompact)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.xs),
-                      child: Text(
-                        widget.task.description,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                          const SizedBox(width: 4),
+                          Text(
+                            widget.task.priority.label,
+                            style: AppTextStyles.caption.copyWith(
+                              color: widget.task.priority.color,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                ],
+                    const SizedBox(
+                      height: AppSpacing.sm,
+                    ),
+                    Text(
+                      widget.task.title,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: widget.task.isCompleted
+                            ? AppColors.textMuted
+                            : AppColors.textPrimary,
+                        decoration: widget.task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (widget.task.description.isNotEmpty && !widget.isCompact)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.xs),
+                        child: Text(
+                          widget.task.description,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
 
-            // Priority indicator
-          ),
-        );
-      },
+              // Priority indicator
+            ),
+          );
+        },
+      ),
     );
   }
 }

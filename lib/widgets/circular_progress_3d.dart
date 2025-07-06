@@ -11,6 +11,7 @@ class CircularProgressIndicator3D extends StatefulWidget {
   final Color? backgroundColor;
   final double strokeWidth;
   final bool showPercentage;
+  final VoidCallback? onTap;
 
   const CircularProgressIndicator3D({
     super.key,
@@ -22,6 +23,7 @@ class CircularProgressIndicator3D extends StatefulWidget {
     this.backgroundColor,
     this.strokeWidth = 12,
     this.showPercentage = false,
+    this.onTap,
   });
 
   @override
@@ -137,150 +139,154 @@ class _CircularProgressIndicator3DState
         _rotationController,
       ]),
       builder: (context, child) {
-        return SizedBox(
-          width: widget.size,
-          height: widget.size,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Background glow effect (fixed size to prevent morphing)
-              Container(
-                width: widget.size,
-                height: widget.size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryColor.withValues(
-                          alpha: 0.1 * _pulseAnimation.value),
-                      blurRadius: 50 * _pulseAnimation.value,
-                      spreadRadius: 20,
-                    ),
-                  ],
-                ),
-              ),
-
-              // Outer glassmorphism ring
-              Container(
-                width: widget.size,
-                height: widget.size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.glassBackground,
-                      AppColors.glassBackground.withValues(alpha: 0.05),
+        return GestureDetector(
+          onTap: widget.onTap,
+          child: SizedBox(
+            width: widget.size,
+            height: widget.size,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Background glow effect (fixed size to prevent morphing)
+                Container(
+                  width: widget.size,
+                  height: widget.size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withValues(
+                            alpha: 0.1 * _pulseAnimation.value),
+                        blurRadius: 50 * _pulseAnimation.value,
+                        spreadRadius: 20,
+                      ),
                     ],
                   ),
-                  border: Border.all(
-                    color: AppColors.glassBorder,
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+                ),
+
+                // Outer glassmorphism ring
+                Container(
+                  width: widget.size,
+                  height: widget.size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.glassBackground,
+                        AppColors.glassBackground.withValues(alpha: 0.05),
+                      ],
                     ),
-                    BoxShadow(
-                      color: primaryColor.withValues(alpha: 0.1),
-                      blurRadius: 40,
-                      spreadRadius: -10,
+                    border: Border.all(
+                      color: AppColors.glassBorder,
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                      BoxShadow(
+                        color: primaryColor.withValues(alpha: 0.1),
+                        blurRadius: 40,
+                        spreadRadius: -10,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 3D Progress Ring (removed distorting transforms)
+                CustomPaint(
+                  size: Size(widget.size - 20, widget.size - 20),
+                  painter: CircularProgress3DPainter(
+                    progress: _progressAnimation.value,
+                    primaryColor: primaryColor,
+                    backgroundColor: backgroundColor,
+                    strokeWidth: widget.strokeWidth * 1.2,
+                    rotationOffset: _rotationAnimation.value *
+                        0.05, // Subtle rotation for gradient
+                  ),
+                ),
+
+                // Center content
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Progress percentage
+                    if (widget.showPercentage)
+                      Text(
+                        '$progressPercentage%',
+                        style: AppTextStyles.h1.copyWith(
+                          fontSize: widget.size * 0.15,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          shadows: [
+                            Shadow(
+                              color: primaryColor.withValues(alpha: 0.3),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Text(
+                        '$progressPercentage%',
+                        style: AppTextStyles.h1.copyWith(
+                          fontSize: widget.size * 0.15,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          shadows: [
+                            Shadow(
+                              color: primaryColor.withValues(alpha: 0.3),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    const SizedBox(height: 4),
+
+                    // Task count
+                    if (!widget.showPercentage)
+                      Text(
+                        '${widget.completedTasks}/${widget.totalTasks} tasks',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          fontSize: widget.size * 0.06,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                    const SizedBox(height: 8),
+
+                    // Status indicator
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor().withValues(alpha: 0.2),
+                        borderRadius:
+                            BorderRadius.circular(AppBorderRadius.full),
+                        border: Border.all(
+                          color: _getStatusColor().withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        _getStatusText(),
+                        style: AppTextStyles.caption.copyWith(
+                          color: _getStatusColor(),
+                          fontWeight: FontWeight.w600,
+                          fontSize: widget.size * 0.04,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ),
-
-              // 3D Progress Ring (removed distorting transforms)
-              CustomPaint(
-                size: Size(widget.size - 20, widget.size - 20),
-                painter: CircularProgress3DPainter(
-                  progress: _progressAnimation.value,
-                  primaryColor: primaryColor,
-                  backgroundColor: backgroundColor,
-                  strokeWidth: widget.strokeWidth * 1.2,
-                  rotationOffset: _rotationAnimation.value *
-                      0.05, // Subtle rotation for gradient
-                ),
-              ),
-
-              // Center content
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Progress percentage
-                  if (widget.showPercentage)
-                    Text(
-                      '$progressPercentage%',
-                      style: AppTextStyles.h1.copyWith(
-                        fontSize: widget.size * 0.15,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                        shadows: [
-                          Shadow(
-                            color: primaryColor.withValues(alpha: 0.3),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    Text(
-                      '$progressPercentage%',
-                      style: AppTextStyles.h1.copyWith(
-                        fontSize: widget.size * 0.15,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                        shadows: [
-                          Shadow(
-                            color: primaryColor.withValues(alpha: 0.3),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  const SizedBox(height: 4),
-
-                  // Task count
-                  if (!widget.showPercentage)
-                    Text(
-                      '${widget.completedTasks}/${widget.totalTasks} tasks',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        fontSize: widget.size * 0.06,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-
-                  const SizedBox(height: 8),
-
-                  // Status indicator
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor().withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                      border: Border.all(
-                        color: _getStatusColor().withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      _getStatusText(),
-                      style: AppTextStyles.caption.copyWith(
-                        color: _getStatusColor(),
-                        fontWeight: FontWeight.w600,
-                        fontSize: widget.size * 0.04,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -293,6 +299,7 @@ class _CircularProgressIndicator3DState
     if (progress >= 1.0) return AppColors.statusSuccess;
     if (progress >= 0.7) return AppColors.accentGreen;
     if (progress >= 0.4) return AppColors.accentYellow;
+    if (widget.totalTasks == 0) return AppColors.accentGreen;
     return AppColors.accentOrange;
   }
 
@@ -302,6 +309,7 @@ class _CircularProgressIndicator3DState
     if (progress >= 1.0) return 'Complete';
     if (progress >= 0.7) return 'Almost there';
     if (progress >= 0.4) return 'In progress';
+    if (widget.totalTasks == 0) return "Let's start";
     return 'Getting started';
   }
 }
