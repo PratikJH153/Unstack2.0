@@ -42,6 +42,9 @@ dependencies:
   logger: ^2.6.0
   lottie: ^3.3.1
   carousel_slider: ^5.1.1
+  flutter_slidable: ^4.0.0
+  flutter_markdown: ^0.7.4+3
+
 
 dev_dependencies:
   flutter_test:
@@ -70,6 +73,8 @@ flutter:
     - assets/images/
     - assets/logo/
     - assets/animation/
+    - assets/icons/
+    - assets/files/
 
   fonts:
     - family: Montserrat

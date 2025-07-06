@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:unstack/data/cheers.dart';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -51,8 +52,13 @@ class ModernFlamePainter extends CustomPainter {
 
 class ModernStreakOverlay extends StatefulWidget {
   final int streakCount;
+  final String userName;
 
-  const ModernStreakOverlay({super.key, required this.streakCount});
+  const ModernStreakOverlay({
+    super.key,
+    required this.streakCount,
+    required this.userName,
+  });
 
   @override
   _ModernStreakOverlayState createState() => _ModernStreakOverlayState();
@@ -71,9 +77,17 @@ class _ModernStreakOverlayState extends State<ModernStreakOverlay>
   late Animation<double> _textSlideAnimation;
   late Animation<double> _flameAnimation;
 
+  late String title;
+  late String subtitle;
+
   @override
   void initState() {
     super.initState();
+
+    final random = math.Random();
+    final randomIndex = random.nextInt(cheers.length);
+    title = cheers[randomIndex]['title']!;
+    subtitle = cheers[randomIndex]['subtitle']!;
 
     _mainController = AnimationController(
       duration: Duration(milliseconds: 1200),
@@ -146,7 +160,7 @@ class _ModernStreakOverlayState extends State<ModernStreakOverlay>
     _glowController.repeat(reverse: true);
     _flameController.repeat(reverse: true);
 
-    await Future.delayed(Duration(seconds: 4));
+    await Future.delayed(Duration(seconds: 5));
     if (mounted) {
       Navigator.of(context).pop();
     }
@@ -206,8 +220,8 @@ class _ModernStreakOverlayState extends State<ModernStreakOverlay>
                             animation: _glowAnimation,
                             builder: (context, child) {
                               return Container(
-                                width: 240,
-                                height: 240,
+                                width: 260,
+                                height: 260,
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     begin: Alignment.topLeft,
@@ -236,9 +250,10 @@ class _ModernStreakOverlayState extends State<ModernStreakOverlay>
                                     // Accent glow
                                     BoxShadow(
                                       color: AppColors.accentOrange.withOpacity(
-                                          0.5 * (_glowAnimation.value)),
-                                      blurRadius: 80,
-                                      spreadRadius: 1,
+                                          0.2 * (_glowAnimation.value)),
+                                      blurRadius: 80 * _glowAnimation.value,
+                                      spreadRadius:
+                                          1 * _glowAnimation.value * 5,
                                     ),
                                   ],
                                 ),
@@ -325,7 +340,7 @@ class _ModernStreakOverlayState extends State<ModernStreakOverlay>
                           ),
                         ),
 
-                        SizedBox(height: 48),
+                        SizedBox(height: 32),
 
                         // Minimalist achievement text
                         FadeTransition(
@@ -367,7 +382,7 @@ class _ModernStreakOverlayState extends State<ModernStreakOverlay>
                           ),
                         ),
 
-                        SizedBox(height: 40),
+                        SizedBox(height: AppSpacing.xxl),
 
                         // Congratulations with fade effect
                         FadeTransition(
@@ -377,7 +392,7 @@ class _ModernStreakOverlayState extends State<ModernStreakOverlay>
                             child: Column(
                               children: [
                                 Text(
-                                  'INCREDIBLE!',
+                                  title.toUpperCase(),
                                   style: TextStyle(
                                     fontSize: 28,
                                     fontWeight: FontWeight.w800,
@@ -385,11 +400,11 @@ class _ModernStreakOverlayState extends State<ModernStreakOverlay>
                                     letterSpacing: 3,
                                   ),
                                 ),
-                                SizedBox(height: 16),
+                                SizedBox(height: AppSpacing.sm),
                                 Container(
                                   padding: EdgeInsets.symmetric(horizontal: 40),
                                   child: Text(
-                                    'You\'re absolutely crushing it!\nKeep the momentum going strong.',
+                                    "${widget.userName}, $subtitle",
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w400,

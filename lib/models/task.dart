@@ -48,23 +48,17 @@ enum TaskPriority {
 
 enum TaskSortOption {
   dateCreated,
-  dueDate,
   priority,
-  alphabetical,
-  pomodoroCount;
+  alphabetical;
 
   String get label {
     switch (this) {
       case TaskSortOption.dateCreated:
-        return 'Date Created';
-      case TaskSortOption.dueDate:
-        return 'Due Date';
+        return 'Time Created';
       case TaskSortOption.priority:
         return 'Priority';
       case TaskSortOption.alphabetical:
         return 'Alphabetical';
-      case TaskSortOption.pomodoroCount:
-        return 'Pomodoro Count';
     }
   }
 }
@@ -78,7 +72,6 @@ class Task {
   final DateTime? dueDate;
   final bool isCompleted;
   final int pomodoroCount;
-  final int estimatedPomodoros;
   final List<String> tags;
   final Color? customColor;
 
@@ -91,7 +84,6 @@ class Task {
     this.dueDate,
     this.isCompleted = false,
     this.pomodoroCount = 0,
-    this.estimatedPomodoros = 1,
     this.tags = const [],
     this.customColor,
   });
@@ -118,7 +110,6 @@ class Task {
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
       pomodoroCount: pomodoroCount ?? this.pomodoroCount,
-      estimatedPomodoros: estimatedPomodoros ?? this.estimatedPomodoros,
       tags: tags ?? this.tags,
       customColor: customColor ?? this.customColor,
     );
@@ -144,11 +135,6 @@ class Task {
     return difference <= 3 && difference >= 0;
   }
 
-  double get progressPercentage {
-    if (estimatedPomodoros == 0) return 0.0;
-    return (pomodoroCount / estimatedPomodoros).clamp(0.0, 1.0);
-  }
-
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -170,72 +156,64 @@ class TaskData {
     return [
       Task(
         id: '1',
-        title: 'Build Unstack App',
-        description:
-            'Complete the task management and Pomodoro timer app with glassmorphism design',
+        title: 'Complete this task and swipe up',
+        description: 'Check the box above to finish and move to the next step.',
         priority: TaskPriority.urgent,
         createdAt: DateTime.now().subtract(const Duration(days: 2)),
         dueDate: DateTime.now().add(const Duration(days: 1)),
         pomodoroCount: 2,
-        estimatedPomodoros: 5,
         tags: ['development', 'flutter', 'urgent'],
       ),
       Task(
         id: '2',
-        title: 'Design System Documentation',
-        description:
-            'Document the design system and component library for future reference',
+        title: 'Add your first task',
+        description: 'Tap the + icon above to start planning your work.',
         priority: TaskPriority.medium,
         createdAt: DateTime.now().subtract(const Duration(days: 1)),
         dueDate: DateTime.now().add(const Duration(days: 3)),
         pomodoroCount: 1,
-        estimatedPomodoros: 3,
         tags: ['documentation', 'design'],
       ),
-      // Task(
-      //   id: '3',
-      //   title: 'User Testing Session',
-      //   description:
-      //       'Conduct user testing sessions to gather feedback on the app interface',
-      //   priority: TaskPriority.high,
-      //   createdAt: DateTime.now().subtract(const Duration(hours: 12)),
-      //   dueDate: DateTime.now().add(const Duration(days: 2)),
-      //   pomodoroCount: 0,
-      //   estimatedPomodoros: 2,
-      //   tags: ['testing', 'ux'],
-      // ),
-      // Task(
-      //   id: '4',
-      //   title: 'Code Review',
-      //   description:
-      //       'Review pull requests and provide feedback to team members',
-      //   priority: TaskPriority.low,
-      //   createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-      //   pomodoroCount: 1,
-      //   estimatedPomodoros: 1,
-      //   tags: ['review', 'team'],
-      // ),
-      // Task(
-      //   id: '5',
-      //   title: 'Update Dependencies',
-      //   description:
-      //       'Update all Flutter dependencies to latest stable versions',
-      //   priority: TaskPriority.medium,
-      //   createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      //   pomodoroCount: 1,
-      //   estimatedPomodoros: 1,
-      //   tags: ['maintenance', 'flutter'],
-      // ),
-      // Task(
-      //   id: '6',
-      //   title: 'Write Unit Tests',
-      //   description: 'Add comprehensive unit tests for core',
-      //   priority: TaskPriority.high,
-      //   createdAt: DateTime.now().subtract(const Duration(days: 4)),
-      //   pomodoroCount: 3,
-      //   estimatedPomodoros: 3,
-      //   tags: ['testing', 'quality'],
-      // ),
+      Task(
+        id: '3',
+        title: 'User Testing Session',
+        description:
+            'Conduct user testing sessions to gather feedback on the app interface',
+        priority: TaskPriority.high,
+        createdAt: DateTime.now().subtract(const Duration(hours: 12)),
+        dueDate: DateTime.now().add(const Duration(days: 2)),
+        pomodoroCount: 0,
+        tags: ['testing', 'ux'],
+      ),
+      Task(
+        id: '4',
+        title: 'Code Review',
+        description:
+            'Review pull requests and provide feedback to team members',
+        priority: TaskPriority.low,
+        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+        pomodoroCount: 1,
+        tags: ['review', 'team'],
+      ),
+      Task(
+        id: '5',
+        title: 'Update Dependencies',
+        description:
+            'Update all Flutter dependencies to latest stable versions',
+        priority: TaskPriority.medium,
+        createdAt: DateTime.now().subtract(const Duration(days: 3)),
+        pomodoroCount: 1,
+        tags: ['maintenance', 'flutter'],
+      ),
+      Task(
+        id: '6',
+        title: 'Write Unit Tests',
+        description: 'Add comprehensive unit tests for core',
+        priority: TaskPriority.high,
+        createdAt: DateTime.now().subtract(const Duration(days: 4)),
+        pomodoroCount: 3,
+        tags: ['testing', 'quality'],
+      ),
     ];
   }
 }

@@ -29,13 +29,13 @@ class _HomePageState extends State<HomePage> {
   String _userName = '';
   late ConfettiController _confettiController;
   bool isStreak = false;
-  late List<Task> cards;
+  late List<Task> tasks;
 
   @override
   void initState() {
     super.initState();
     _confettiController = ConfettiController(duration: Duration(seconds: 2));
-    cards = TaskData.getSampleTasks();
+    tasks = TaskData.getSampleTasks();
     // cards = [];
     _loadUserName();
     _initializeStreakTracking();
@@ -47,7 +47,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _updateStreakData() async {
-    await streakTracker.updateTodayCompletion(cards);
+    await streakTracker.updateTodayCompletion(tasks);
     setState(() {
       isStreak = streakTracker.currentStreak > 0;
     });
@@ -75,7 +75,10 @@ class _HomePageState extends State<HomePage> {
       barrierColor: Colors.black87,
       transitionDuration: Duration(milliseconds: 400),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return ModernStreakOverlay(streakCount: streakCount);
+        return ModernStreakOverlay(
+          streakCount: streakCount,
+          userName: _userName,
+        );
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(
@@ -97,7 +100,7 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xxl),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -115,8 +118,14 @@ class _HomePageState extends State<HomePage> {
                     Row(
                       children: [
                         HomeAppBarButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            RouteUtils.pushNamed(
+                              context,
+                              RoutePaths.profilePage,
+                            );
+                          },
                           icon: CupertinoIcons.person,
+                          isPremium: true,
                         ),
                         const SizedBox(width: AppSpacing.md),
                         HomeAppBarButton(
@@ -134,6 +143,9 @@ class _HomePageState extends State<HomePage> {
                             RouteUtils.pushNamed(
                               context,
                               RoutePaths.addTaskPage,
+                              arguments: {
+                                'fromHomePage': true,
+                              },
                             );
                           },
                           icon: CupertinoIcons.add,
@@ -190,12 +202,20 @@ class _HomePageState extends State<HomePage> {
                 // 3D Circular Progress Indicator
                 Center(
                   child: CircularProgressIndicator3D(
-                    totalTasks: cards.length,
-                    completedTasks: cards.fold<int>(
+                    totalTasks: tasks.length,
+                    completedTasks: tasks.fold<int>(
                         0,
                         (previousValue, value) =>
                             previousValue + (value.isCompleted ? 1 : 0)),
                     size: 290,
+                    onTap: () {
+                      Navigator.of(context).pushNamed(
+                        RoutePaths.progressAnalyticsPage,
+                        arguments: {
+                          'tasks': tasks,
+                        },
+                      );
+                    },
                   ),
                 )
                     .animate()
@@ -209,15 +229,15 @@ class _HomePageState extends State<HomePage> {
                 Spacer(),
                 Align(
                   alignment: Alignment.bottomCenter,
-                  child: cards.isNotEmpty && cards.any((e) => !e.isCompleted)
+                  child: tasks.isNotEmpty && tasks.any((e) => !e.isCompleted)
                       ? CardsSwiperWidget(
-                          cardData: cards,
+                          cardData: tasks,
                           onCardCollectionAnimationComplete: (_) {},
                           onCardChange: (index) {
                             print('Top card index: $index');
                           },
                           cardBuilder: (context, index, visibleIndex) {
-                            var task = cards[index];
+                            var task = tasks[index];
                             return Hero(
                               tag: 'card_$index',
                               child: GestureDetector(
@@ -259,45 +279,86 @@ class _HomePageState extends State<HomePage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Transform.scale(
-                                        scale: 2.5,
-                                        child: Checkbox(
-                                          value: task.isCompleted,
-                                          visualDensity: VisualDensity.compact,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(6.0),
-                                            side: BorderSide(
-                                              color: AppColors.whiteColor,
-                                              width: 2,
+                                      Row(
+                                        children: [
+                                          Transform.scale(
+                                            scale: 2.5,
+                                            child: Checkbox(
+                                              value: task.isCompleted,
+                                              visualDensity:
+                                                  VisualDensity.compact,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(6.0),
+                                                side: BorderSide(
+                                                  color: AppColors.whiteColor,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              side: BorderSide(
+                                                color: AppColors.textMuted,
+                                                width: 2,
+                                              ),
+                                              activeColor:
+                                                  AppColors.accentGreen,
+                                              onChanged: (bool? value) async {
+                                                setState(() {
+                                                  tasks[index] = task.copyWith(
+                                                      isCompleted:
+                                                          value ?? false);
+                                                });
+                                                if (tasks.every(
+                                                    (e) => e.isCompleted)) {
+                                                  if (context.mounted) {
+                                                    showStreakOverlay(
+                                                      context,
+                                                      streakTracker
+                                                              .currentStreak +
+                                                          1,
+                                                    );
+                                                  }
+                                                }
+                                                if (value ?? false) {
+                                                  _confettiController.play();
+                                                }
+                                                await _updateStreakData();
+                                              },
                                             ),
                                           ),
-                                          side: BorderSide(
-                                            color: AppColors.textMuted,
-                                            width: 2,
-                                          ),
-                                          activeColor: AppColors.accentGreen,
-                                          onChanged: (bool? value) async {
-                                            setState(() {
-                                              cards[index] = task.copyWith(
-                                                  isCompleted: value ?? false);
-                                            });
-                                            if (cards
-                                                .every((e) => e.isCompleted)) {
-                                              if (context.mounted) {
-                                                showStreakOverlay(
-                                                  context,
-                                                  streakTracker.currentStreak +
-                                                      1,
-                                                );
-                                              }
-                                            }
-                                            if (value ?? false) {
-                                              _confettiController.play();
-                                            }
-                                            await _updateStreakData();
-                                          },
-                                        ),
+                                          if (task.isCompleted)
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                left: 24,
+                                              ),
+                                              child: Center(
+                                                child: Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.center,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.swipe_up_rounded,
+                                                      color: AppColors
+                                                          .lightWhiteColor,
+                                                      size: 24,
+                                                    ),
+                                                    const SizedBox(
+                                                      width: AppSpacing.xs,
+                                                    ),
+                                                    Text(
+                                                      'Swipe up for next task',
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: AppColors
+                                                            .lightWhiteColor,
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                       const SizedBox(height: AppSpacing.md),
                                       Text(
@@ -309,6 +370,9 @@ class _HomePageState extends State<HomePage> {
                                           color: AppColors.textPrimary,
                                           fontSize: 28,
                                         ),
+                                      ),
+                                      const SizedBox(
+                                        height: AppSpacing.xs,
                                       ),
                                       Text(
                                         task.description,
@@ -392,37 +456,8 @@ class _HomePageState extends State<HomePage> {
                                         ],
                                       ),
                                       SizedBox(
-                                        height: task.isCompleted
-                                            ? AppSpacing.md
-                                            : AppSpacing.xl,
+                                        height: AppSpacing.sm,
                                       ),
-                                      if (task.isCompleted)
-                                        Center(
-                                          child: Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.center,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.swipe_up_rounded,
-                                                color: AppColors.textSecondary,
-                                                size: 18,
-                                              ),
-                                              const SizedBox(
-                                                width: AppSpacing.sm,
-                                              ),
-                                              Text(
-                                                'Swipe up for next task',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color:
-                                                      AppColors.textSecondary,
-                                                ),
-                                              )
-                                            ],
-                                          ),
-                                        )
                                     ],
                                   ),
                                 ),
@@ -447,14 +482,18 @@ class _HomePageState extends State<HomePage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '🚀 Please add some task',
+                                tasks.isEmpty
+                                    ? 'Please add some task'
+                                    : 'Hoorey you finished with all of your tasks for today!',
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTextStyles.h2.copyWith(
-                                  fontFamily: 'Poppins',
                                   color: AppColors.textPrimary,
                                   fontSize: 32,
                                 ),
+                              ),
+                              const SizedBox(
+                                height: AppSpacing.xs,
                               ),
                               Text(
                                 'Click on button at top right to add some tasks!',
@@ -464,74 +503,6 @@ class _HomePageState extends State<HomePage> {
                                   color: AppColors.textSecondary,
                                   fontSize: 18,
                                 ),
-                              ),
-                              const Spacer(),
-                              Row(
-                                children: [
-                                  Icon(
-                                    CupertinoIcons.hourglass,
-                                    color: AppColors.textMuted,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    "1 Pomo",
-                                    style: AppTextStyles.bodyLarge.copyWith(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Icon(
-                                    CupertinoIcons.calendar,
-                                    color: AppColors.textMuted,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    "Today",
-                                    style: AppTextStyles.bodyLarge.copyWith(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.sm,
-                                      vertical: AppSpacing.xs,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: TaskPriority.urgent.color
-                                          .withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(
-                                          AppBorderRadius.full),
-                                      border: Border.all(
-                                        color: TaskPriority.urgent.color
-                                            .withValues(alpha: 0.5),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          TaskPriority.urgent.icon,
-                                          size: 12,
-                                          color: TaskPriority.urgent.color,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          TaskPriority.urgent.label,
-                                          style: AppTextStyles.caption.copyWith(
-                                            color: TaskPriority.urgent.color,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
                               ),
                             ],
                           ),

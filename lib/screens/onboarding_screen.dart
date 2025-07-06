@@ -63,26 +63,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _navigateToNameInput() {
-    // Navigator.of(context).pushReplacement(
-    //   PageRouteBuilder(
-    //     pageBuilder: (context, animation, secondaryAnimation) =>
-    //         const NameInputScreen(),
-    //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-    //       return SlideTransition(
-    //         position: animation.drive(
-    //           Tween(begin: const Offset(1.0, 0.0), end: Offset.zero).chain(
-    //             CurveTween(curve: Curves.easeInOut),
-    //           ),
-    //         ),
-    //         child: child,
-    //       );
-    //     },
-    //     transitionDuration: const Duration(milliseconds: 400),
-    //   ),
-    // );
-    RouteUtils.pushReplacementNamed(
+    RouteUtils.pushNamed(
       context,
-      RoutePaths.nameInputScreen,
+      RoutePaths.signInPage,
     );
   }
 
@@ -156,10 +139,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             _currentPage == _onboardingData.length - 1
                                 ? AppColors.whiteColor
                                 : AppColors.whiteColor.withAlpha(50),
+                        shadowColor: Colors.white.withAlpha(51),
                         shape: RoundedRectangleBorder(
+                          side: BorderSide(
+                            color: Colors.white.withAlpha(51),
+                          ),
                           borderRadius: BorderRadius.all(
                             Radius.circular(
-                              32,
+                              48,
                             ),
                           ),
                         ),
@@ -229,6 +216,9 @@ class OnboardingPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(
+            height: AppSpacing.sm,
+          ),
           // Icon container
           Container(
             width: 120,
@@ -261,8 +251,10 @@ class OnboardingPage extends StatelessWidget {
           Text(
             data.title,
             style: AppTextStyles.h1.copyWith(
-              fontWeight: FontWeight.w900,
               fontSize: 50,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1.2,
+              height: 1.1,
             ),
           )
               .animate(target: isActive ? 1 : 0)

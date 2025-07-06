@@ -8,4 +8,7 @@ class RoutePaths {
   static const String taskDetailsPage = '/taskDetailsPage';
   static const String streakPage = '/streakPage';
   static const String addTaskPage = '/addTaskPage';
+  static const String profilePage = '/profilePage';
+  static const String signInPage = '/signInPage';
+  static const String progressAnalyticsPage = '/progressAnalyticsPage';
 }

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -23,72 +22,455 @@ class TaskDetailsPage extends StatefulWidget {
 
 class _TaskDetailsPageState extends State<TaskDetailsPage>
     with TickerProviderStateMixin {
-  late AnimationController _scaleController;
-  late AnimationController _fadeController;
-  late AnimationController _slideController;
-
-  bool _isPomodoroMode = false;
-  bool _isTimerRunning = false;
-  bool _isTimerPaused = false;
+  late Task _currentTask;
 
   // Pomodoro timer state
   Timer? _timer;
-  int _remainingSeconds = 25 * 60; // 25 minutes in seconds
-  final int _totalSeconds = 25 * 60;
+  bool _isTimerRunning = false;
+  bool _isTimerPaused = false;
+  bool _isBreakTime = false;
 
-  // Task editing state
-  bool _isEditing = false;
-  late TextEditingController _titleController;
-  late TextEditingController _descriptionController;
-  TaskPriority _selectedPriority = TaskPriority.medium;
+  // Timer configuration
+  int _selectedDuration = 25; // Default 25 minutes
+  final List<int> _durationOptions = [15, 25, 30, 45];
+  int _remainingSeconds = 25 * 60;
+  int _totalSeconds = 25 * 60;
 
-  // Sample task for demonstration
-  late Task _currentTask;
+  // Break configuration
+  final int _shortBreakDuration = 5; // 5 minutes
+  final int _longBreakDuration = 15; // 15 minutes
+  int _completedSessions = 0;
 
   @override
   void initState() {
     super.initState();
-
-    // Initialize controllers
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-    _fadeController = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    );
-    _slideController = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    );
-
-    // Initialize task data
-    _currentTask = widget.task ?? TaskData.getSampleTasks().first;
-    _titleController = TextEditingController(text: _currentTask.title);
-    _descriptionController =
-        TextEditingController(text: _currentTask.description);
-    _selectedPriority = _currentTask.priority;
-
-    // Start entrance animations
-    _fadeController.forward();
-    _slideController.forward();
+    _currentTask = widget.task ??
+        Task(
+          id: 'temp',
+          title: 'New Task',
+          description: '',
+          priority: TaskPriority.medium,
+          createdAt: DateTime.now(),
+        );
   }
 
   @override
   void dispose() {
-    _scaleController.dispose();
-    _fadeController.dispose();
-    _slideController.dispose();
-    _titleController.dispose();
-    _descriptionController.dispose();
     _timer?.cancel();
     super.dispose();
   }
 
-  void _startPomodoro() {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundPrimary,
+      body: _buildPomodoroTimerView(),
+    );
+  }
+
+  Widget _buildPomodoroTimerView() {
+    return SafeArea(
+      child: Column(
+        children: [
+          // Header Section
+          _buildHeader(),
+
+          // Main Content
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Column(
+                children: [
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Timer Configuration Section (only show when not running)
+                  if (!_isTimerRunning && !_isTimerPaused)
+                    _buildTimerConfiguration()
+                        .animate()
+                        .fadeIn(duration: 300.ms)
+                        .slideY(begin: 0.1, duration: 300.ms),
+
+                  const Spacer(),
+
+                  // Timer Display
+                  _buildTimerDisplay(),
+
+                  const Spacer(),
+
+                  // Session Controls
+                  _buildSessionControls(),
+
+                  const SizedBox(height: AppSpacing.xl),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top bar with back button and close button
+          Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceCard.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(
+                    CupertinoIcons.back,
+                    color: AppColors.textPrimary,
+                    size: 20,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceCard.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(
+                    CupertinoIcons.xmark,
+                    color: AppColors.textSecondary,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.xl),
+
+          // Task title
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  _currentTask.title,
+                  style: AppTextStyles.h2.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                // Session counter
+                if (_completedSessions > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentPurple.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                      border: Border.all(
+                        color: AppColors.accentPurple.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      '$_completedSessions sessions completed',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.accentPurple,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimerConfiguration() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Column(
+        children: [
+          // Duration selection pills
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: _durationOptions.map((duration) {
+              final isSelected = _selectedDuration == duration;
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedDuration = duration;
+                      _remainingSeconds = duration * 60;
+                      _totalSeconds = duration * 60;
+                    });
+                    HapticFeedback.lightImpact();
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.accentPurple
+                          : AppColors.surfaceCard.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.accentPurple
+                            : AppColors.glassBorder.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      '${duration}m',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isSelected
+                            ? AppColors.textInverse
+                            : AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimerDisplay() {
+    final progress = _totalSeconds > 0
+        ? (_totalSeconds - _remainingSeconds) / _totalSeconds
+        : 0.0;
+    final minutes = _remainingSeconds ~/ 60;
+    final seconds = _remainingSeconds % 60;
+
+    return Column(
+      children: [
+        // Session type indicator
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: _isBreakTime
+                ? AppColors.accentOrange.withValues(alpha: 0.1)
+                : AppColors.accentPurple.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppBorderRadius.full),
+            border: Border.all(
+              color: _isBreakTime
+                  ? AppColors.accentOrange.withValues(alpha: 0.3)
+                  : AppColors.accentPurple.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            _isBreakTime ? 'Take a break' : 'Focus on a process',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: _isBreakTime
+                  ? AppColors.accentOrange
+                  : AppColors.accentPurple,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: AppSpacing.xl),
+
+        // Modern timer display with subtle background
+        Container(
+          width: 280,
+          height: 280,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                _isBreakTime
+                    ? AppColors.accentOrange.withValues(alpha: 0.05)
+                    : AppColors.accentPurple.withValues(alpha: 0.05),
+                Colors.transparent,
+              ],
+              stops: const [0.7, 1.0],
+            ),
+          ),
+          child: Stack(
+            children: [
+              // Subtle background circle
+              Center(
+                child: Container(
+                  width: 240,
+                  height: 240,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.surfaceCard.withValues(alpha: 0.1),
+                    border: Border.all(
+                      color: AppColors.glassBorder.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Progress indicator
+              Center(
+                child: SizedBox(
+                  width: 240,
+                  height: 240,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 3,
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      _isBreakTime
+                          ? AppColors.accentOrange
+                          : AppColors.accentPurple,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Timer text
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+                      style: AppTextStyles.h1.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w300,
+                        fontSize: 48,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      _isBreakTime ? 'Olivia!' : 'Olivia!',
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSessionControls() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Column(
+        children: [
+          // Primary control button
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _isTimerRunning
+                  ? _pauseTimer
+                  : (_isTimerPaused ? _resumeTimer : _startTimer),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isTimerRunning
+                    ? AppColors.accentOrange
+                    : (_isBreakTime
+                        ? AppColors.accentOrange
+                        : AppColors.accentPurple),
+                foregroundColor: AppColors.textInverse,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                ),
+                elevation: 0,
+                shadowColor: Colors.transparent,
+              ),
+              child: Text(
+                _isTimerRunning
+                    ? 'Pause'
+                    : (_isTimerPaused ? 'Resume' : 'Start Session'),
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+
+          // Secondary controls - minimal and subtle
+          if (_isTimerRunning || _isTimerPaused) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: _stopTimer,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.sm,
+                    ),
+                  ),
+                  child: Text(
+                    'Stop Session',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xl),
+                TextButton(
+                  onPressed: _resetTimer,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.sm,
+                    ),
+                  ),
+                  child: Text(
+                    'Reset',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Timer control methods
+  void _startTimer() {
     setState(() {
-      _isPomodoroMode = true;
       _isTimerRunning = true;
       _isTimerPaused = false;
     });
@@ -98,8 +480,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
         if (_remainingSeconds > 0) {
           _remainingSeconds--;
         } else {
-          _stopTimer();
-          _showPomodoroComplete();
+          _completeSession();
         }
       });
     });
@@ -117,33 +498,77 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
   }
 
   void _resumeTimer() {
-    setState(() {
-      _isTimerRunning = true;
-      _isTimerPaused = false;
-    });
-    _startPomodoro();
+    _startTimer();
   }
 
   void _stopTimer() {
     setState(() {
       _isTimerRunning = false;
       _isTimerPaused = false;
-      _remainingSeconds = _totalSeconds;
+      _remainingSeconds = _selectedDuration * 60;
+      _totalSeconds = _selectedDuration * 60;
+      _isBreakTime = false;
     });
     _timer?.cancel();
-    HapticFeedback.mediumImpact();
+    HapticFeedback.lightImpact();
   }
 
-  void _exitPomodoroMode() {
-    _stopTimer();
+  void _resetTimer() {
     setState(() {
-      _isPomodoroMode = false;
+      _isTimerRunning = false;
+      _isTimerPaused = false;
+      _remainingSeconds = _selectedDuration * 60;
+      _totalSeconds = _selectedDuration * 60;
+      _isBreakTime = false;
     });
+    _timer?.cancel();
+    HapticFeedback.lightImpact();
   }
 
-  void _showPomodoroComplete() {
-    HapticFeedback.heavyImpact();
+  void _completeSession() {
+    _timer?.cancel();
 
+    if (_isBreakTime) {
+      // Break completed, return to work session
+      setState(() {
+        _isBreakTime = false;
+        _isTimerRunning = false;
+        _isTimerPaused = false;
+        _remainingSeconds = _selectedDuration * 60;
+        _totalSeconds = _selectedDuration * 60;
+      });
+      _showBreakCompleteDialog();
+    } else {
+      // Work session completed
+      setState(() {
+        _completedSessions++;
+        _currentTask = _currentTask.copyWith(
+          pomodoroCount: _currentTask.pomodoroCount + 1,
+        );
+      });
+      _startBreakSession();
+    }
+
+    HapticFeedback.heavyImpact();
+  }
+
+  void _startBreakSession() {
+    final isLongBreak = _completedSessions % 4 == 0;
+    final breakDuration =
+        isLongBreak ? _longBreakDuration : _shortBreakDuration;
+
+    setState(() {
+      _isBreakTime = true;
+      _isTimerRunning = false;
+      _isTimerPaused = false;
+      _remainingSeconds = breakDuration * 60;
+      _totalSeconds = breakDuration * 60;
+    });
+
+    _showSessionCompleteDialog(isLongBreak);
+  }
+
+  void _showSessionCompleteDialog(bool isLongBreak) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -153,818 +578,86 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
           borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         ),
         title: Text(
-          '🍅 Pomodoro Complete!',
-          style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
-          textAlign: TextAlign.center,
+          'Session Complete! 🎉',
+          style: AppTextStyles.h3.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: Text(
-          'Great job! You\'ve completed a 25-minute focus session.',
-          style:
-              AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-          textAlign: TextAlign.center,
+          'Great work! Time for a ${isLongBreak ? 'long' : 'short'} break.',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _exitPomodoroMode();
+              _startTimer(); // Start break timer automatically
             },
             child: Text(
-              'Done',
-              style: TextStyle(color: AppColors.accentPurple),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _toggleEdit() {
-    setState(() {
-      _isEditing = !_isEditing;
-    });
-
-    if (!_isEditing) {
-      // Save changes
-      _currentTask = _currentTask.copyWith(
-        title: _titleController.text,
-        description: _descriptionController.text,
-        priority: _selectedPriority,
-      );
-    }
-
-    HapticFeedback.lightImpact();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isPomodoroMode) {
-      return _buildPomodoroView();
-    }
-
-    return Hero(
-      tag: widget.heroTag,
-      child: Scaffold(
-        backgroundColor: AppColors.backgroundPrimary,
-        body: _buildTaskDetailsView(),
-      ),
-    );
-  }
-
-  Widget _buildTaskDetailsView() {
-    return CustomScrollView(
-      slivers: [
-        // Custom App Bar
-        SliverAppBar(
-          expandedHeight: 120,
-          floating: false,
-          pinned: true,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              CupertinoIcons.back,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          actions: [
-            IconButton(
-              onPressed: _toggleEdit,
-              icon: Icon(
-                _isEditing ? CupertinoIcons.check_mark : CupertinoIcons.pencil,
+              'Start Break',
+              style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.accentPurple,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-          ],
-          flexibleSpace: FlexibleSpaceBar(
-            background: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.backgroundPrimary,
-                    AppColors.backgroundPrimary.withValues(alpha: 0.8),
-                  ],
-                ),
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-        ),
-
-        // Content
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Task Title
-                _buildTaskTitle()
-                    .animate()
-                    .fadeIn(duration: 3000.ms, delay: 200.ms)
-                    .slideY(
-                        begin: 0.3,
-                        duration: 3000.ms,
-                        curve: Curves.easeOutCubic),
-
-                const SizedBox(height: AppSpacing.lg),
-
-                // Task Description
-                _buildTaskDescription()
-                    .animate()
-                    .fadeIn(duration: 3000.ms, delay: 400.ms)
-                    .slideY(
-                        begin: 0.3,
-                        duration: 3000.ms,
-                        curve: Curves.easeOutCubic),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Task Priority
-                _buildTaskPriority()
-                    .animate()
-                    .fadeIn(duration: 3000.ms, delay: 600.ms)
-                    .slideY(
-                        begin: 0.3,
-                        duration: 3000.ms,
-                        curve: Curves.easeOutCubic),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Pomodoro Progress
-                _buildPomodoroProgress()
-                    .animate()
-                    .fadeIn(duration: 3000.ms, delay: 800.ms)
-                    .slideY(
-                        begin: 0.3,
-                        duration: 3000.ms,
-                        curve: Curves.easeOutCubic),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Start Pomodoro Button
-                _buildStartPomodoroButton()
-                    .animate()
-                    .fadeIn(duration: 3000.ms, delay: 1000.ms)
-                    .slideY(
-                        begin: 0.3,
-                        duration: 3000.ms,
-                        curve: Curves.easeOutCubic)
-                    .shimmer(duration: 2000.ms, delay: 2000.ms),
-
-                const SizedBox(height: AppSpacing.xl),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTaskTitle() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.glassBackground,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(
-          color: AppColors.glassBorder,
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Task Title',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _isEditing
-              ? TextField(
-                  controller: _titleController,
-                  style: AppTextStyles.h2.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'Enter task title...',
-                    hintStyle: TextStyle(color: AppColors.textMuted),
-                  ),
-                  maxLines: 2,
-                )
-              : Text(
-                  _currentTask.title,
-                  style: AppTextStyles.h2.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTaskDescription() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.glassBackground,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(
-          color: AppColors.glassBorder,
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Description',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _isEditing
-              ? TextField(
-                  controller: _descriptionController,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'Enter task description...',
-                    hintStyle: TextStyle(color: AppColors.textMuted),
-                  ),
-                  maxLines: 4,
-                )
-              : Text(
-                  _currentTask.description,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTaskPriority() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.glassBackground,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(
-          color: AppColors.glassBorder,
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Priority',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _isEditing
-              ? DropdownButton<TaskPriority>(
-                  value: _selectedPriority,
-                  onChanged: (TaskPriority? newValue) {
-                    if (newValue != null) {
-                      setState(() {
-                        _selectedPriority = newValue;
-                      });
-                    }
-                  },
-                  dropdownColor: AppColors.surfaceCard,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
-                  items: TaskPriority.values.map((TaskPriority priority) {
-                    return DropdownMenuItem<TaskPriority>(
-                      value: priority,
-                      child: Row(
-                        children: [
-                          Icon(
-                            priority.icon,
-                            color: priority.color,
-                            size: 20,
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Text(priority.label),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                )
-              : Row(
-                  children: [
-                    Icon(
-                      _currentTask.priority.icon,
-                      color: _currentTask.priority.color,
-                      size: 24,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      _currentTask.priority.label,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPomodoroProgress() {
-    final progress =
-        _currentTask.pomodoroCount / _currentTask.estimatedPomodoros;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.glassBackground,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(
-          color: AppColors.glassBorder,
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Pomodoro Progress',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${_currentTask.pomodoroCount} / ${_currentTask.estimatedPomodoros}',
-                      style: AppTextStyles.h3.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    LinearProgressIndicator(
-                      value: progress.clamp(0.0, 1.0),
-                      backgroundColor: AppColors.surfaceElevated,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.accentPurple,
-                      ),
-                      borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                    ),
-                  ],
-                ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _stopTimer(); // Skip break
+            },
+            child: Text(
+              'Skip Break',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(width: AppSpacing.lg),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: AppColors.accentPurple.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                ),
-                child: Icon(
-                  CupertinoIcons.timer,
-                  color: AppColors.accentPurple,
-                  size: 24,
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStartPomodoroButton() {
-    return Container(
-      width: double.infinity,
-      height: 60,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.accentPurple,
-            AppColors.accentPurple.withValues(alpha: 0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  void _showBreakCompleteDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         ),
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accentPurple.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+        title: Text(
+          'Break Complete! ⚡',
+          style: AppTextStyles.h3.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Ready to get back to work?',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text(
+              'Start Next Session',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.accentPurple,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _startPomodoro,
-          borderRadius: BorderRadius.circular(AppBorderRadius.full),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  CupertinoIcons.play_fill,
-                  color: AppColors.textInverse,
-                  size: 24,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Start Pomodoro',
-                  style: AppTextStyles.buttonLarge.copyWith(
-                    color: AppColors.textInverse,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPomodoroView() {
-    final minutes = _remainingSeconds ~/ 60;
-    final seconds = _remainingSeconds % 60;
-    final progress = 1.0 - (_remainingSeconds / _totalSeconds);
-
-    int minute1 = 2;
-    int minute2 = 5;
-
-    return Scaffold(
-      backgroundColor: AppColors.redShade,
-      appBar: AppBar(),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with back button
-
-              Text(
-                'set your timer',
-                style: AppTextStyles.h3.copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 32,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 400,
-                      decoration: BoxDecoration(
-                        color: AppColors.whiteColor,
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(48),
-                        ),
-                      ),
-                      child: CarouselSlider(
-                        options: CarouselOptions(
-                          aspectRatio: 0.5,
-                          enableInfiniteScroll: true,
-                          enlargeCenterPage: true,
-                          enlargeFactor: 0.4,
-                          scrollDirection: Axis.vertical,
-                          autoPlay: false,
-                          pageSnapping: true,
-                          viewportFraction: 0.45, // Shows 3 items at once
-                          onPageChanged: (index, reason) {
-                            print('Page changed: $index');
-                            setState(() {
-                              minute1 = index + 1;
-                            });
-                          },
-
-                          initialPage: minute1 - 1,
-                        ),
-                        items: [1, 2, 3, 4, 5, 6, 7, 8, 9]
-                            .map((e) => Center(
-                                  child: Text(
-                                    e.toString(),
-                                    style: AppTextStyles.h1.copyWith(
-                                      fontFamily: 'Poppins',
-                                      color: e == minute1
-                                          ? AppColors.redShade
-                                          : const Color.fromARGB(
-                                              255, 255, 218, 220),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 180,
-                                    ),
-                                  ),
-                                ))
-                            .toList(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    width: AppSpacing.xs,
-                  ),
-                  Expanded(
-                    child: Container(
-                      height: 400,
-                      decoration: BoxDecoration(
-                        color: AppColors.whiteColor,
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(48),
-                        ),
-                      ),
-                      child: CarouselSlider(
-                        options: CarouselOptions(
-                          aspectRatio: 0.5,
-                          enableInfiniteScroll: true,
-                          enlargeCenterPage: true,
-                          enlargeFactor: 0.4,
-                          scrollDirection: Axis.vertical,
-                          autoPlay: false,
-                          pageSnapping: true,
-                          viewportFraction: 0.45, // Shows 3 items at once
-                          onPageChanged: (index, reason) {
-                            setState(() {
-                              minute2 = index + 1;
-                            });
-                          },
-
-                          initialPage: minute2 - 1,
-                        ),
-                        items: [1, 2, 3, 4, 5, 6, 7, 8, 9]
-                            .map((e) => Builder(
-                                  builder: (BuildContext context) {
-                                    return Center(
-                                      child: Text(
-                                        e.toString(),
-                                        style: AppTextStyles.h1.copyWith(
-                                          fontFamily: 'Poppins',
-                                          color: e == minute2
-                                              ? AppColors.redShade
-                                              : const Color.fromARGB(
-                                                  255, 255, 218, 220),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 180,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ))
-                            .toList(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Task title
-              // Text(
-              //   _currentTask.title,
-              //   style: AppTextStyles.h1.copyWith(
-              //     color: AppColors.textPrimary,
-              //     fontWeight: FontWeight.bold,
-              //   ),
-              //   textAlign: TextAlign.center,
-              //   maxLines: 2,
-              //   overflow: TextOverflow.ellipsis,
-              // ).animate().fadeIn(duration: 3000.ms).slideY(
-              //     begin: -0.3, duration: 3000.ms, curve: Curves.easeOutCubic),
-
-              const Spacer(),
-
-              // Circular timer
-              // _buildCircularTimer(progress, minutes, seconds)
-              //     .animate()
-              //     .fadeIn(duration: 3000.ms, delay: 500.ms)
-              //     .scale(
-              //         begin: const Offset(0.8, 0.8),
-              //         duration: 3000.ms,
-              //         curve: Curves.easeOutBack),
-
-              // const Spacer(),
-
-              // // Timer controls
-              // _buildTimerControls()
-              //     .animate()
-              //     .fadeIn(duration: 3000.ms, delay: 1000.ms)
-              //     .slideY(
-              //         begin: 0.5,
-              //         duration: 3000.ms,
-              //         curve: Curves.easeOutCubic),
-
-              const SizedBox(height: AppSpacing.xl),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCircularTimer(double progress, int minutes, int seconds) {
-    return SizedBox(
-      width: 280,
-      height: 280,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Background circle
-          Container(
-            width: 280,
-            height: 280,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.glassBackground,
-              border: Border.all(
-                color: AppColors.glassBorder,
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 30,
-                  offset: const Offset(0, 15),
-                ),
-              ],
-            ),
-          ),
-
-          // Progress circle
-          SizedBox(
-            width: 260,
-            height: 260,
-            child: CircularProgressIndicator(
-              value: progress,
-              strokeWidth: 8,
-              backgroundColor: AppColors.surfaceElevated,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                AppColors.accentPurple,
-              ),
-            ),
-          ),
-
-          // Timer text
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
-                style: AppTextStyles.h1.copyWith(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                _isTimerRunning
-                    ? 'Focus Time'
-                    : _isTimerPaused
-                        ? 'Paused'
-                        : 'Ready',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimerControls() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        // Stop button
-        _buildControlButton(
-          icon: CupertinoIcons.stop_fill,
-          onTap: _stopTimer,
-          color: AppColors.statusError,
-        ),
-
-        // Play/Pause button
-        _buildControlButton(
-          icon: _isTimerRunning
-              ? CupertinoIcons.pause_fill
-              : CupertinoIcons.play_fill,
-          onTap: _isTimerRunning ? _pauseTimer : _resumeTimer,
-          color: AppColors.accentPurple,
-          isLarge: true,
-        ),
-
-        // Reset button (placeholder for future functionality)
-        _buildControlButton(
-          icon: CupertinoIcons.refresh,
-          onTap: () {
-            setState(() {
-              _remainingSeconds = _totalSeconds;
-            });
-          },
-          color: AppColors.accentBlue,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildControlButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    required Color color,
-    bool isLarge = false,
-  }) {
-    final size = isLarge ? 80.0 : 60.0;
-    final iconSize = isLarge ? 32.0 : 24.0;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color.withValues(alpha: 0.2),
-          border: Border.all(
-            color: color.withValues(alpha: 0.5),
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Icon(
-          icon,
-          color: color,
-          size: iconSize,
-        ),
       ),
     );
   }
