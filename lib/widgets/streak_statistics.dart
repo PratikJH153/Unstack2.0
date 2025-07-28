@@ -22,81 +22,81 @@ class StreakStatistics extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Header Section
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: AppColors.accentPurple.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppBorderRadius.md),
-              ),
-              child: Icon(
-                CupertinoIcons.chart_bar_alt_fill,
-                color: AppColors.accentPurple,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Streak Statistics',
-                    style: AppTextStyles.h3.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Track your consistency and progress',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xl),
+        // Row(
+        //   children: [
+        //     Container(
+        //       padding: const EdgeInsets.all(AppSpacing.sm),
+        //       decoration: BoxDecoration(
+        //         color: AppColors.accentPurple.withValues(alpha: 0.1),
+        //         borderRadius: BorderRadius.circular(AppBorderRadius.md),
+        //       ),
+        //       child: Icon(
+        //         CupertinoIcons.chart_bar_alt_fill,
+        //         color: AppColors.accentPurple,
+        //         size: 20,
+        //       ),
+        //     ),
+        //     const SizedBox(width: AppSpacing.md),
+        //     Expanded(
+        //       child: Column(
+        //         crossAxisAlignment: CrossAxisAlignment.start,
+        //         children: [
+        //           Text(
+        //             'Streak Statistics',
+        //             style: AppTextStyles.h3.copyWith(
+        //               color: AppColors.textPrimary,
+        //               fontWeight: FontWeight.w600,
+        //             ),
+        //           ),
+        //           const SizedBox(height: AppSpacing.xs),
+        //           Text(
+        //             'Track your consistency and progress',
+        //             style: AppTextStyles.bodySmall.copyWith(
+        //               color: AppColors.textSecondary,
+        //             ),
+        //           ),
+        //         ],
+        //       ),
+        //     ),
+        //   ],
+        // ),
+        // const SizedBox(height: AppSpacing.xl),
 
         // Main Statistics Grid
         Column(
           children: [
             // Current Streak (Featured)
-            SizedBox(
-              height: 180,
-              child: _StreakCard(
-                title: 'Current Streak',
-                value: currentStreak.toString(),
-                subtitle: currentStreak == 1 ? 'day' : 'days',
-                icon: CupertinoIcons.flame_fill,
-                color: AppColors.accentOrange,
-                isLarge: true,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
+            // SizedBox(
+            //   height: 180,
+            //   child: _StreakCard(
+            //     title: 'Current Streak',
+            //     value: currentStreak.toString(),
+            //     subtitle: currentStreak == 1 ? 'day' : 'days',
+            //     icon: CupertinoIcons.flame_fill,
+            //     color: AppColors.accentOrange,
+            //     isLarge: true,
+            //   ),
+            // ),
+            // const SizedBox(height: AppSpacing.md),
 
             // Side Statistics
             Row(
               children: [
                 Expanded(
                   child: _StreakCard(
-                    title: 'Longest',
+                    title: 'Current Streak',
                     value: longestStreak.toString(),
                     subtitle: longestStreak == 1 ? 'day' : 'days',
                     icon: CupertinoIcons.star_fill,
-                    color: AppColors.accentYellow,
+                    color: AppColors.accentOrange,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: _StreakCard(
-                    title: 'Total Days',
-                    value: totalCompletedDays.toString(),
-                    subtitle: 'completed',
+                    title: 'Longest Streak',
+                    value: longestStreak.toString(),
+                    subtitle: longestStreak == 1 ? 'day' : 'days',
                     icon: CupertinoIcons.checkmark_circle_fill,
                     color: AppColors.accentGreen,
                   ),
@@ -116,7 +116,7 @@ class _StreakCard extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final Color color;
-  final bool isLarge;
+  final bool isLarge = false;
 
   const _StreakCard({
     required this.title,
@@ -124,7 +124,6 @@ class _StreakCard extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     required this.color,
-    this.isLarge = false,
   });
 
   @override

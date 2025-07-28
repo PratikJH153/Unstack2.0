@@ -276,7 +276,7 @@ class _NameInputScreenState extends State<NameInputScreen> {
                             ),
                           )
                               .animate()
-                              .slideX(
+                              .slideY(
                                 begin: -0.3,
                                 duration: 500.ms,
                                 curve: Curves.easeOut,

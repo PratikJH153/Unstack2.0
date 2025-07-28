@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:unstack/routes/route.dart';
 import 'package:unstack/theme/app_theme.dart';
-import 'package:unstack/widgets/auth/apple_sign_in_button.dart';
+import 'package:unstack/widgets/auth/email_signin_button.dart';
 import 'package:unstack/widgets/auth/google_sign_in_button.dart';
 import 'package:unstack/widgets/general_info_dialog.dart';
 import 'package:unstack/widgets/loading_widget.dart';
@@ -49,8 +49,10 @@ class _SignInPageState extends State<SignInPage> {
               GeneralInfoDialog.show(context, 'assets/files/terms.md');
             },
             child: Text(
-              'Terms and Conditions',
-              style: AppTextStyles.bodySmall,
+              'Terms & Conditions',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -138,8 +140,8 @@ class _SignInPageState extends State<SignInPage> {
                 !_isLoading
                     ? Column(
                         children: [
-                          buildAppleSigninButton(
-                            'Sign in with Apple',
+                          buildPhoneSignInButton(
+                            'Sign in with Phone Number',
                             onPressed: navigateToUsernamePage,
                           ),
                           const SizedBox(

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:unstack/models/task.dart';
+import 'package:unstack/models/task.model.dart';
 import 'package:unstack/routes/route.dart';
 import 'package:unstack/theme/app_theme.dart';
 import 'package:unstack/widgets/buildScrollableWithFade.dart';
@@ -198,7 +198,7 @@ class _TasksListPageState extends State<TasksListPage>
       ),
     )
         .animate()
-        .slideX(
+        .slideY(
           begin: 0.3,
           duration: 400.ms,
           curve: Curves.easeOut,
@@ -413,13 +413,13 @@ class _TasksListPageState extends State<TasksListPage>
                   onToggleComplete: (isCompleted) =>
                       _toggleTaskCompletion(task, isCompleted),
                   onTap: () {
-                    Navigator.of(context).pushNamed(
-                      RoutePaths.taskDetailsPage,
-                      arguments: {
-                        'heroTag': 'task_${task.id}',
-                        'task': task,
-                      },
-                    );
+                    // Navigator.of(context).pushNamed(
+                    //   RoutePaths.taskDetailsPage,
+                    //   arguments: {
+                    //     'heroTag': 'task_${task.id}',
+                    //     'task': task,
+                    //   },
+                    // );
                   },
                 )
                     .animate(
@@ -430,7 +430,7 @@ class _TasksListPageState extends State<TasksListPage>
                         });
                       },
                     )
-                    .slideX(
+                    .slideY(
                       begin: isAnimationDone ? 0 : 0.3,
                       duration: Duration(milliseconds: 300 + (index * 50)),
                       curve: Curves.easeOut,

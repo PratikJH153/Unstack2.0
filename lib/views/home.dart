@@ -5,13 +5,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:unstack/models/task.dart';
+import 'package:unstack/models/task.model.dart';
 import 'package:unstack/models/streak_data.dart';
 
 import 'package:unstack/routes/route.dart';
 
 import 'package:unstack/theme/app_theme.dart';
-import 'package:unstack/views/task_details_page.dart';
+import 'package:unstack/utils/app_size.dart';
 import 'package:unstack/views/test_animation.dart';
 import 'package:unstack/widgets/home_app_bar_button.dart';
 import 'package:unstack/widgets/streak_widget.dart';
@@ -100,7 +100,7 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: AppSpacing.xxl),
+                const SizedBox(height: AppSpacing.lg),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -108,7 +108,7 @@ class _HomePageState extends State<HomePage> {
                       currentStreak: streakTracker.currentStreak,
                     )
                         .animate()
-                        .slideX(
+                        .slideY(
                           begin: -0.3,
                           duration: 500.ms,
                           curve: Curves.easeOut,
@@ -125,9 +125,9 @@ class _HomePageState extends State<HomePage> {
                             );
                           },
                           icon: CupertinoIcons.person,
-                          isPremium: true,
+                          isPremium: false,
                         ),
-                        const SizedBox(width: AppSpacing.md),
+                        const SizedBox(width: AppSpacing.sm),
                         HomeAppBarButton(
                           onPressed: () {
                             RouteUtils.pushNamed(
@@ -137,7 +137,7 @@ class _HomePageState extends State<HomePage> {
                           },
                           icon: CupertinoIcons.list_dash,
                         ),
-                        const SizedBox(width: AppSpacing.md),
+                        const SizedBox(width: AppSpacing.sm),
                         HomeAppBarButton(
                           onPressed: () {
                             RouteUtils.pushNamed(
@@ -153,7 +153,7 @@ class _HomePageState extends State<HomePage> {
                       ],
                     )
                         .animate()
-                        .slideX(
+                        .slideY(
                           begin: 0.3,
                           duration: 500.ms,
                           curve: Curves.easeOut,
@@ -174,7 +174,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     )
                         .animate()
-                        .slideX(
+                        .slideY(
                           begin: -0.3,
                           duration: 500.ms,
                           curve: Curves.easeOut,
@@ -188,7 +188,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     )
                         .animate()
-                        .slideX(
+                        .slideY(
                           begin: -0.3,
                           duration: 500.ms,
                           curve: Curves.easeOut,
@@ -207,7 +207,16 @@ class _HomePageState extends State<HomePage> {
                         0,
                         (previousValue, value) =>
                             previousValue + (value.isCompleted ? 1 : 0)),
-                    size: 290,
+                    size: () {
+                      if (AppSize(context).height < 600) {
+                        return AppSize(context).height * 0.28;
+                      } else if (AppSize(context).height < 700) {
+                        return AppSize(context).height * 0.30;
+                      } else if (AppSize(context).height < 800) {
+                        return AppSize(context).height * 0.32;
+                      }
+                      return AppSize(context).height * 0.32;
+                    }(),
                     onTap: () {
                       Navigator.of(context).pushNamed(
                         RoutePaths.progressAnalyticsPage,
@@ -238,228 +247,220 @@ class _HomePageState extends State<HomePage> {
                           },
                           cardBuilder: (context, index, visibleIndex) {
                             var task = tasks[index];
-                            return Hero(
-                              tag: 'card_$index',
-                              child: GestureDetector(
-                                onTap: () {
-                                  // Navigator.of(context).push(
-                                  //   MaterialPageRoute(
-                                  //     builder: (context) {
-                                  //       return TaskDetailsPage(
-                                  //           heroTag: 'card_$index');
-                                  //     },
-                                  //   ),
-                                  // );
-                                  Navigator.of(context)
-                                      .push(HeroDialogRoute(builder: (context) {
-                                    return TaskDetailsPage(
-                                      heroTag: 'card_$index',
-                                    );
-                                  }));
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(32),
-                                    color: AppColors.backgroundTertiary,
-                                    border: Border.all(
-                                      color: AppColors.textMuted,
-                                      width: 0.5,
-                                    ),
+                            return GestureDetector(
+                              onTap: () {
+                                // Navigator.of(context).push(
+                                //   MaterialPageRoute(
+                                //     builder: (context) {
+                                //       return TaskDetailsPage(
+                                //           heroTag: 'card_$index');
+                                //     },
+                                //   ),
+                                // );
+                                // Navigator.of(context)
+                                //     .push(HeroDialogRoute(builder: (context) {
+                                //   return TaskDetailsPage(
+                                //     heroTag: 'card_$index',
+                                //   );
+                                // }));
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(32),
+                                  color: AppColors.backgroundTertiary,
+                                  border: Border.all(
+                                    color: AppColors.textMuted,
+                                    width: 1,
                                   ),
-                                  width: 600,
-                                  height: 300,
-                                  padding: const EdgeInsets.only(
-                                    left: AppSpacing.xl,
-                                    right: AppSpacing.xl,
-                                    bottom: AppSpacing.md,
-                                    top: AppSpacing.xl,
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Transform.scale(
-                                            scale: 2.5,
-                                            child: Checkbox(
-                                              value: task.isCompleted,
-                                              visualDensity:
-                                                  VisualDensity.compact,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(6.0),
-                                                side: BorderSide(
-                                                  color: AppColors.whiteColor,
-                                                  width: 2,
-                                                ),
-                                              ),
+                                ),
+                                width: double.infinity,
+                                height: () {
+                                  if (AppSize(context).height < 600) {
+                                    return AppSize(context).height * 0.28;
+                                  } else if (AppSize(context).height < 700) {
+                                    return AppSize(context).height * 0.30;
+                                  } else if (AppSize(context).height < 800) {
+                                    return AppSize(context).height * 0.32;
+                                  }
+                                  return AppSize(context).height * 0.30;
+                                }(),
+                                padding: const EdgeInsets.only(
+                                  left: AppSpacing.xl,
+                                  right: AppSpacing.xl,
+                                  bottom: AppSpacing.md,
+                                  top: AppSpacing.xl,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Transform.scale(
+                                          scale: 2.5,
+                                          child: Checkbox(
+                                            value: task.isCompleted,
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(6.0),
                                               side: BorderSide(
-                                                color: AppColors.textMuted,
+                                                color: AppColors.whiteColor,
                                                 width: 2,
                                               ),
-                                              activeColor:
-                                                  AppColors.accentGreen,
-                                              onChanged: (bool? value) async {
-                                                setState(() {
-                                                  tasks[index] = task.copyWith(
-                                                      isCompleted:
-                                                          value ?? false);
-                                                });
-                                                if (tasks.every(
-                                                    (e) => e.isCompleted)) {
-                                                  if (context.mounted) {
-                                                    showStreakOverlay(
-                                                      context,
-                                                      streakTracker
-                                                              .currentStreak +
-                                                          1,
-                                                    );
-                                                  }
-                                                }
-                                                if (value ?? false) {
-                                                  _confettiController.play();
-                                                }
-                                                await _updateStreakData();
-                                              },
                                             ),
+                                            side: BorderSide(
+                                              color: AppColors.textMuted,
+                                              width: 2,
+                                            ),
+                                            activeColor: AppColors.accentGreen,
+                                            onChanged: (bool? value) async {
+                                              setState(() {
+                                                tasks[index] = task.copyWith(
+                                                    isCompleted:
+                                                        value ?? false);
+                                              });
+                                              if (tasks.every(
+                                                  (e) => e.isCompleted)) {
+                                                if (context.mounted) {
+                                                  showStreakOverlay(
+                                                    context,
+                                                    streakTracker
+                                                            .currentStreak +
+                                                        1,
+                                                  );
+                                                }
+                                              }
+                                              if (value ?? false) {
+                                                _confettiController.play();
+                                              }
+                                              await _updateStreakData();
+                                            },
                                           ),
-                                          if (task.isCompleted)
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                left: 24,
-                                              ),
-                                              child: Center(
-                                                child: Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.center,
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.swipe_up_rounded,
+                                        ),
+                                        if (task.isCompleted)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: 24,
+                                            ),
+                                            child: Center(
+                                              child: Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    Icons.swipe_up_rounded,
+                                                    color: AppColors
+                                                        .lightWhiteColor,
+                                                    size: 24,
+                                                  ),
+                                                  const SizedBox(
+                                                    width: AppSpacing.xs,
+                                                  ),
+                                                  Text(
+                                                    'Swipe up for next task',
+                                                    style: TextStyle(
+                                                      fontSize: 14,
                                                       color: AppColors
                                                           .lightWhiteColor,
-                                                      size: 24,
                                                     ),
-                                                    const SizedBox(
-                                                      width: AppSpacing.xs,
-                                                    ),
-                                                    Text(
-                                                      'Swipe up for next task',
-                                                      style: TextStyle(
-                                                        fontSize: 14,
-                                                        color: AppColors
-                                                            .lightWhiteColor,
-                                                      ),
-                                                    )
-                                                  ],
-                                                ),
+                                                  )
+                                                ],
                                               ),
                                             ),
-                                        ],
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: AppSpacing.md),
+                                    Text(
+                                      task.title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTextStyles.h2.copyWith(
+                                        fontFamily: 'Poppins',
+                                        color: AppColors.textPrimary,
+                                        fontSize: 28,
                                       ),
-                                      const SizedBox(height: AppSpacing.md),
-                                      Text(
-                                        task.title,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTextStyles.h2.copyWith(
-                                          fontFamily: 'Poppins',
+                                    ),
+                                    const SizedBox(
+                                      height: AppSpacing.xs,
+                                    ),
+                                    Text(
+                                      task.description,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          CupertinoIcons.calendar,
                                           color: AppColors.textPrimary,
-                                          fontSize: 28,
+                                          size: 20,
                                         ),
-                                      ),
-                                      const SizedBox(
-                                        height: AppSpacing.xs,
-                                      ),
-                                      Text(
-                                        task.description,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 16,
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          task.isDueToday
+                                              ? 'Due Today'
+                                              : task.isDueSoon
+                                                  ? 'Due Soon'
+                                                  : 'Not Due',
+                                          style:
+                                              AppTextStyles.bodyLarge.copyWith(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 16,
+                                          ),
                                         ),
-                                      ),
-                                      const Spacer(),
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            CupertinoIcons.hourglass,
-                                            color: AppColors.textPrimary,
-                                            size: 20,
+                                        const Spacer(),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: AppSpacing.sm,
+                                            vertical: AppSpacing.xs,
                                           ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            "${task.pomodoroCount} Pomos",
-                                            style: AppTextStyles.bodyLarge
-                                                .copyWith(
-                                              color: AppColors.textPrimary,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Icon(
-                                            CupertinoIcons.calendar,
-                                            color: AppColors.textPrimary,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            "Today",
-                                            style: AppTextStyles.bodyLarge
-                                                .copyWith(
-                                              color: AppColors.textPrimary,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          const Spacer(),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: AppSpacing.sm,
-                                              vertical: AppSpacing.xs,
-                                            ),
-                                            decoration: BoxDecoration(
+                                          decoration: BoxDecoration(
+                                            color: task.priority.color
+                                                .withValues(alpha: 0.2),
+                                            borderRadius: BorderRadius.circular(
+                                                AppBorderRadius.full),
+                                            border: Border.all(
                                               color: task.priority.color
-                                                  .withValues(alpha: 0.2),
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                      AppBorderRadius.full),
-                                              border: Border.all(
-                                                color: task.priority.color
-                                                    .withValues(alpha: 0.5),
-                                                width: 1,
-                                              ),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  task.priority.icon,
-                                                  size: 12,
-                                                  color: task.priority.color,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  task.priority.label,
-                                                  style: AppTextStyles.caption
-                                                      .copyWith(
-                                                    color: task.priority.color,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ],
+                                                  .withValues(alpha: 0.5),
+                                              width: 1,
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                      SizedBox(
-                                        height: AppSpacing.sm,
-                                      ),
-                                    ],
-                                  ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.flag,
+                                                size: 12,
+                                                color: task.priority.color,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                task.priority.label,
+                                                style: AppTextStyles.caption
+                                                    .copyWith(
+                                                  color: task.priority.color,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: AppSpacing.xs,
+                                    ),
+                                  ],
                                 ),
                               ),
                             );

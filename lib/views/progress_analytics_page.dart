@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:unstack/models/analytics_data.dart';
-import 'package:unstack/models/task.dart';
+import 'package:unstack/models/task.model.dart';
 import 'package:unstack/theme/app_theme.dart';
 import 'package:unstack/widgets/buildScrollableWithFade.dart';
 import 'package:unstack/widgets/glassmorphism_container.dart';
@@ -68,11 +68,11 @@ class _ProgressAnalyticsPageState extends State<ProgressAnalyticsPage> {
                         .fadeIn(delay: 300.ms, duration: 600.ms)
                         .slideY(begin: 0.3, duration: 600.ms),
 
-                    const SizedBox(height: AppSpacing.xxl),
-                    _buildTaskBreakdownSection()
-                        .animate()
-                        .fadeIn(delay: 200.ms, duration: 600.ms)
-                        .slideY(begin: 0.3, duration: 600.ms),
+                    // const SizedBox(height: AppSpacing.xxl),
+                    // _buildTaskBreakdownSection()
+                    //     .animate()
+                    //     .fadeIn(delay: 200.ms, duration: 600.ms)
+                    //     .slideY(begin: 0.3, duration: 600.ms),
                   ],
                 ),
               ),
@@ -139,31 +139,33 @@ class _ProgressAnalyticsPageState extends State<ProgressAnalyticsPage> {
 
         Row(
           children: [
-            // Total Pomodoros
-            Expanded(
-              child: SizedBox(
-                height: 175,
-                child: _buildSummaryCard(
-                  title: 'Pomodoros',
-                  value: todayAnalytics.totalPomodoros.toString(),
-                  subtitle: 'sessions',
-                  icon: CupertinoIcons.timer,
-                  color: AppColors.accentPurple,
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
+            // COMMENTED OUT - Pomodoro functionality
+            // // Total Pomodoros
+            // Expanded(
+            //   child: SizedBox(
+            //     height: 175,
+            //     child: _buildSummaryCard(
+            //       title: 'Pomodoros',
+            //       value: todayAnalytics.totalPomodoros.toString(),
+            //       subtitle: 'sessions',
+            //       icon: CupertinoIcons.timer,
+            //       color: AppColors.accentPurple,
+            //     ),
+            //   ),
+            // ),
+            // const SizedBox(width: AppSpacing.md),
 
-            // Total Time
-            Expanded(
-              child: _buildSummaryCard(
-                title: 'Time Invested',
-                value: todayAnalytics.formattedTotalTime,
-                subtitle: 'today',
-                icon: CupertinoIcons.clock,
-                color: AppColors.accentGreen,
-              ),
-            ),
+            // COMMENTED OUT - Pomodoro functionality
+            // // Total Time
+            // Expanded(
+            //   child: _buildSummaryCard(
+            //     title: 'Time Invested',
+            //     value: todayAnalytics.formattedTotalTime,
+            //     subtitle: 'today',
+            //     icon: CupertinoIcons.clock,
+            //     color: AppColors.accentGreen,
+            //   ),
+            // ),
           ],
         ),
         const SizedBox(height: AppSpacing.md),
@@ -356,35 +358,36 @@ class _ProgressAnalyticsPageState extends State<ProgressAnalyticsPage> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: AppSpacing.xs),
-                        Row(
-                          children: [
-                            Icon(
-                              CupertinoIcons.timer,
-                              color: AppColors.textSecondary,
-                              size: 14,
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              '${taskAnalytics.completedPomodoros} sessions',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Icon(
-                              CupertinoIcons.hourglass,
-                              color: AppColors.textSecondary,
-                              size: 14,
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              '${taskAnalytics.totalTimeInMinutes} mins',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
+                        // COMMENTED OUT - Pomodoro functionality
+                        // Row(
+                        //   children: [
+                        //     Icon(
+                        //       CupertinoIcons.timer,
+                        //       color: AppColors.textSecondary,
+                        //       size: 14,
+                        //     ),
+                        //     const SizedBox(width: AppSpacing.xs),
+                        //     Text(
+                        //       '${taskAnalytics.completedPomodoros} sessions',
+                        //       style: AppTextStyles.bodySmall.copyWith(
+                        //         color: AppColors.textSecondary,
+                        //       ),
+                        //     ),
+                        //     const SizedBox(width: AppSpacing.md),
+                        //     Icon(
+                        //       CupertinoIcons.hourglass,
+                        //       color: AppColors.textSecondary,
+                        //       size: 14,
+                        //     ),
+                        //     const SizedBox(width: AppSpacing.xs),
+                        //     Text(
+                        //       '${taskAnalytics.totalTimeInMinutes} mins',
+                        //       style: AppTextStyles.bodySmall.copyWith(
+                        //         color: AppColors.textSecondary,
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
                       ],
                     ),
                   ),
@@ -414,25 +417,26 @@ class _ProgressAnalyticsPageState extends State<ProgressAnalyticsPage> {
             ),
             const SizedBox(height: AppSpacing.lg),
 
-            // Pomodoro comparison
-            _buildComparisonRow(
-              'Pomodoros',
-              weeklyComparison.currentWeek.totalPomodoros.toString(),
-              weeklyComparison.previousWeek.totalPomodoros.toString(),
-              weeklyComparison.pomodoroChange,
-              CupertinoIcons.timer,
-            ),
-            const SizedBox(height: AppSpacing.md),
+            // COMMENTED OUT - Pomodoro functionality
+            // // Pomodoro comparison
+            // _buildComparisonRow(
+            //   'Pomodoros',
+            //   weeklyComparison.currentWeek.totalPomodoros.toString(),
+            //   weeklyComparison.previousWeek.totalPomodoros.toString(),
+            //   weeklyComparison.pomodoroChange,
+            //   CupertinoIcons.timer,
+            // ),
+            // const SizedBox(height: AppSpacing.md),
 
-            // Time comparison
-            _buildComparisonRow(
-              'Time Invested',
-              weeklyComparison.currentWeek.formattedTotalTime,
-              weeklyComparison.previousWeek.formattedTotalTime,
-              weeklyComparison.timeChange,
-              CupertinoIcons.clock,
-            ),
-            const SizedBox(height: AppSpacing.md),
+            // // Time comparison
+            // _buildComparisonRow(
+            //   'Time Invested',
+            //   weeklyComparison.currentWeek.formattedTotalTime,
+            //   weeklyComparison.previousWeek.formattedTotalTime,
+            //   weeklyComparison.timeChange,
+            //   CupertinoIcons.clock,
+            // ),
+            // const SizedBox(height: AppSpacing.md),
 
             // Completion rate comparison
             _buildComparisonRow(
@@ -440,6 +444,20 @@ class _ProgressAnalyticsPageState extends State<ProgressAnalyticsPage> {
               '${(weeklyComparison.currentWeek.taskCompletionPercentage * 100).toInt()}%',
               '${(weeklyComparison.previousWeek.taskCompletionPercentage * 100).toInt()}%',
               weeklyComparison.completionRateChange,
+              CupertinoIcons.checkmark_circle,
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            _buildComparisonRow(
+              'Total Tasks',
+              '${weeklyComparison.currentWeek.totalTasks}',
+              '${(((weeklyComparison.currentWeek.totalTasks - weeklyComparison.previousWeek.totalTasks) / (weeklyComparison.previousWeek.totalTasks == 0 ? 1 : weeklyComparison.previousWeek.totalTasks)) * 100).toStringAsFixed(1)}%',
+              (((weeklyComparison.currentWeek.totalTasks -
+                          weeklyComparison.previousWeek.totalTasks) /
+                      (weeklyComparison.previousWeek.totalTasks == 0
+                          ? 1
+                          : weeklyComparison.previousWeek.totalTasks)) *
+                  100),
               CupertinoIcons.checkmark_circle,
             ),
           ],
@@ -548,7 +566,9 @@ class _ProgressAnalyticsPageState extends State<ProgressAnalyticsPage> {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Complete some Pomodoro sessions to see your task breakdown',
+              // COMMENTED OUT - Pomodoro functionality
+              // 'Complete some Pomodoro sessions to see your task breakdown',
+              'Complete some tasks to see your task breakdown',
               style: AppTextStyles.bodySmall.copyWith(
                 color: AppColors.textSecondary,
               ),

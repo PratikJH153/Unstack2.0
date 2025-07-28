@@ -97,7 +97,7 @@ class AppRouter {
       default:
         return _buildRoute(
           settings: settings,
-          page: const SplashScreen(),
+          page: Container(),
         );
     }
   }

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:unstack/models/task.dart';
+import 'package:unstack/models/task.model.dart';
 
 /// Represents a single day's task completion data
 class DayCompletionData {

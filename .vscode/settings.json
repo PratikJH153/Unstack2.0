@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "/Users/pratikjh/Downloads/Projects/unstack/linux"
+    "cmake.sourceDirectory": "/Users/pratikjh/Downloads/Projects/unstack/linux",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

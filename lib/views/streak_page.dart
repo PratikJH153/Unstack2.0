@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:unstack/models/streak_data.dart';
-import 'package:unstack/models/task.dart';
+import 'package:unstack/models/task.model.dart';
 import 'package:unstack/theme/app_theme.dart';
 import 'package:unstack/widgets/streak_calendar.dart';
 import 'package:unstack/widgets/streak_statistics.dart';
@@ -90,7 +90,7 @@ class _StreakPageState extends State<StreakPage> {
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
           ),
-        ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.3, duration: 400.ms),
+        ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3, duration: 400.ms),
         centerTitle: true,
       ),
       body: _isLoading
@@ -106,9 +106,22 @@ class _StreakPageState extends State<StreakPage> {
                   Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
+                  vertical: AppSpacing.lg,
                 ),
                 child: Column(children: [
+                  // Statistics Section
+                  StreakStatistics(
+                    currentStreak: streakTracker.currentStreak,
+                    longestStreak: streakTracker.longestStreak,
+                    totalCompletedDays: streakTracker.totalCompletedDays,
+                    monthCompletionPercentage: streakTracker
+                        .getMonthCompletionPercentage(_selectedMonth),
+                  )
+                      .animate()
+                      .fadeIn(delay: 300.ms)
+                      .slideY(begin: 0.2, duration: 500.ms),
+                  const SizedBox(height: AppSpacing.md),
+
                   // Calendar Section
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.xl),
@@ -195,49 +208,6 @@ class _StreakPageState extends State<StreakPage> {
                       .animate()
                       .fadeIn(delay: 500.ms)
                       .slideY(begin: 0.2, duration: 500.ms),
-                  const SizedBox(height: AppSpacing.xl),
-                  // Statistics Section
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.xl),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          AppColors.glassBackground,
-                          AppColors.glassBackground.withValues(alpha: 0.05),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                      border: Border.all(
-                        color: AppColors.glassBorder,
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 24,
-                          offset: const Offset(0, 8),
-                        ),
-                        BoxShadow(
-                          color: AppColors.accentPurple.withValues(alpha: 0.05),
-                          blurRadius: 32,
-                          offset: const Offset(0, 16),
-                        ),
-                      ],
-                    ),
-                    child: StreakStatistics(
-                      currentStreak: streakTracker.currentStreak,
-                      longestStreak: streakTracker.longestStreak,
-                      totalCompletedDays: streakTracker.totalCompletedDays,
-                      monthCompletionPercentage: streakTracker
-                          .getMonthCompletionPercentage(_selectedMonth),
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(delay: 300.ms)
-                      .slideY(begin: 0.2, duration: 500.ms),
-
                   const SizedBox(height: AppSpacing.xl),
                 ]),
               ),

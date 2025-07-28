@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:unstack/models/task.dart';
+import 'package:unstack/models/task.model.dart';
 import 'package:unstack/routes/route.dart';
 import 'package:unstack/theme/app_theme.dart';
 import 'package:unstack/utils/app_logger.dart';
@@ -173,7 +173,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                       ),
                     )
                         .animate()
-                        .slideX(
+                        .slideY(
                           begin: 0.3,
                           duration: 400.ms,
                           curve: Curves.easeOut,
@@ -222,7 +222,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                       ),
                     )
                         .animate()
-                        .slideX(
+                        .slideY(
                           begin: 0.3,
                           duration: 400.ms,
                           curve: Curves.easeOut,
@@ -242,7 +242,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 ),
               )
                   .animate()
-                  .slideX(
+                  .slideY(
                     begin: 0.3,
                     duration: 400.ms,
                     curve: Curves.easeOut,
@@ -285,7 +285,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            e.icon,
+                            Icons.flag,
                             size: 18,
                             color: e.color,
                           ),
@@ -307,7 +307,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 }).toList(),
               )
                   .animate()
-                  .slideX(
+                  .slideY(
                     begin: 0.3,
                     duration: 400.ms,
                     curve: Curves.easeOut,
@@ -324,7 +324,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 ),
               )
                   .animate()
-                  .slideX(
+                  .slideY(
                     begin: 0.3,
                     duration: 400.ms,
                     curve: Curves.easeOut,
@@ -389,7 +389,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 }).toList(),
               )
                   .animate()
-                  .slideX(
+                  .slideY(
                     begin: 0.3,
                     duration: 400.ms,
                     curve: Curves.easeOut,

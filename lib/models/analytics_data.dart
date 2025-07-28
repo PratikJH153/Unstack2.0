@@ -1,17 +1,19 @@
-import 'package:unstack/models/task.dart';
+import 'package:unstack/models/task.model.dart';
 
 /// Represents analytics data for a specific task
 class TaskAnalytics {
   final String taskId;
   final String taskTitle;
-  final int completedPomodoros;
+  // COMMENTED OUT - Pomodoro functionality
+  // final int completedPomodoros;
   final TaskPriority priority;
   final bool isCompleted;
 
   const TaskAnalytics({
     required this.taskId,
     required this.taskTitle,
-    required this.completedPomodoros,
+    // COMMENTED OUT - Pomodoro functionality
+    // required this.completedPomodoros,
     required this.priority,
     required this.isCompleted,
   });
@@ -20,53 +22,59 @@ class TaskAnalytics {
     return TaskAnalytics(
       taskId: task.id,
       taskTitle: task.title,
-      completedPomodoros: task.pomodoroCount,
+      // COMMENTED OUT - Pomodoro functionality
+      // completedPomodoros: task.pomodoroCount,
       priority: task.priority,
       isCompleted: task.isCompleted,
     );
   }
 
-  /// Total time invested in minutes (25 minutes per Pomodoro)
-  int get totalTimeInMinutes => completedPomodoros * 25;
+  // COMMENTED OUT - Pomodoro functionality
+  // /// Total time invested in minutes (25 minutes per Pomodoro)
+  // int get totalTimeInMinutes => completedPomodoros * 25;
 
-  /// Total time invested in hours and minutes format
-  String get formattedTime {
-    final hours = totalTimeInMinutes ~/ 60;
-    final minutes = totalTimeInMinutes % 60;
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    }
-    return '${minutes}m';
-  }
+  // COMMENTED OUT - Pomodoro functionality
+  // /// Total time invested in hours and minutes format
+  // String get formattedTime {
+  //   final hours = totalTimeInMinutes ~/ 60;
+  //   final minutes = totalTimeInMinutes % 60;
+  //   if (hours > 0) {
+  //     return '${hours}h ${minutes}m';
+  //   }
+  //   return '${minutes}m';
+  // }
 }
 
 /// Represents daily analytics summary
 class DailyAnalytics {
   final DateTime date;
-  final int totalPomodoros;
-  final int totalTimeInMinutes;
+  // COMMENTED OUT - Pomodoro functionality
+  // final int totalPomodoros;
+  // final int totalTimeInMinutes;
   final int completedTasks;
   final int totalTasks;
   final List<TaskAnalytics> taskBreakdown;
 
   const DailyAnalytics({
     required this.date,
-    required this.totalPomodoros,
-    required this.totalTimeInMinutes,
+    // COMMENTED OUT - Pomodoro functionality
+    // required this.totalPomodoros,
+    // required this.totalTimeInMinutes,
     required this.completedTasks,
     required this.totalTasks,
     required this.taskBreakdown,
   });
 
-  /// Total time invested formatted as hours and minutes
-  String get formattedTotalTime {
-    final hours = totalTimeInMinutes ~/ 60;
-    final minutes = totalTimeInMinutes % 60;
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    }
-    return '${minutes}m';
-  }
+  // COMMENTED OUT - Pomodoro functionality
+  // /// Total time invested formatted as hours and minutes
+  // String get formattedTotalTime {
+  //   final hours = totalTimeInMinutes ~/ 60;
+  //   final minutes = totalTimeInMinutes % 60;
+  //   if (hours > 0) {
+  //     return '${hours}h ${minutes}m';
+  //   }
+  //   return '${minutes}m';
+  // }
 
   /// Task completion percentage
   double get taskCompletionPercentage {
@@ -85,25 +93,26 @@ class WeeklyComparison {
     required this.previousWeek,
   });
 
-  /// Percentage change in total Pomodoros
-  double get pomodoroChange {
-    if (previousWeek.totalPomodoros == 0) {
-      return currentWeek.totalPomodoros > 0 ? 100.0 : 0.0;
-    }
-    return ((currentWeek.totalPomodoros - previousWeek.totalPomodoros) /
-            previousWeek.totalPomodoros) *
-        100;
-  }
+  // COMMENTED OUT - Pomodoro functionality
+  // /// Percentage change in total Pomodoros
+  // double get pomodoroChange {
+  //   if (previousWeek.totalPomodoros == 0) {
+  //     return currentWeek.totalPomodoros > 0 ? 100.0 : 0.0;
+  //   }
+  //   return ((currentWeek.totalPomodoros - previousWeek.totalPomodoros) /
+  //           previousWeek.totalPomodoros) *
+  //       100;
+  // }
 
-  /// Percentage change in total time
-  double get timeChange {
-    if (previousWeek.totalTimeInMinutes == 0) {
-      return currentWeek.totalTimeInMinutes > 0 ? 100.0 : 0.0;
-    }
-    return ((currentWeek.totalTimeInMinutes - previousWeek.totalTimeInMinutes) /
-            previousWeek.totalTimeInMinutes) *
-        100;
-  }
+  // /// Percentage change in total time
+  // double get timeChange {
+  //   if (previousWeek.totalTimeInMinutes == 0) {
+  //     return currentWeek.totalTimeInMinutes > 0 ? 100.0 : 0.0;
+  //   }
+  //   return ((currentWeek.totalTimeInMinutes - previousWeek.totalTimeInMinutes) /
+  //           previousWeek.totalTimeInMinutes) *
+  //       100;
+  // }
 
   /// Percentage change in completion rate
   double get completionRateChange {
@@ -117,8 +126,7 @@ class WeeklyComparison {
   }
 
   /// Whether the current week shows improvement
-  bool get isImproving =>
-      pomodoroChange > 0 || timeChange > 0 || completionRateChange > 0;
+  bool get isImproving => completionRateChange > 0;
 }
 
 /// Analytics calculator utility class
@@ -129,16 +137,11 @@ class AnalyticsCalculator {
     final taskAnalytics =
         tasks.map((task) => TaskAnalytics.fromTask(task)).toList();
 
-    final totalPomodoros =
-        tasks.fold<int>(0, (sum, task) => sum + task.pomodoroCount);
-    final totalTimeInMinutes = totalPomodoros * 25;
     final completedTasks = tasks.where((task) => task.isCompleted).length;
     taskAnalytics.sort(
         (a, b) => (a.isCompleted ? 1 : 0).compareTo((b.isCompleted ? 1 : 0)));
     return DailyAnalytics(
       date: today,
-      totalPomodoros: totalPomodoros,
-      totalTimeInMinutes: totalTimeInMinutes,
       completedTasks: completedTasks,
       totalTasks: tasks.length,
       taskBreakdown: taskAnalytics,
@@ -153,11 +156,6 @@ class AnalyticsCalculator {
     final previousWeekTasks = _generateMockPreviousWeekData();
     final previousWeek = DailyAnalytics(
       date: DateTime.now().subtract(const Duration(days: 7)),
-      totalPomodoros: previousWeekTasks.fold<int>(
-          0, (sum, task) => sum + task.pomodoroCount),
-      totalTimeInMinutes: previousWeekTasks.fold<int>(
-              0, (sum, task) => sum + task.pomodoroCount) *
-          25,
       completedTasks:
           previousWeekTasks.where((task) => task.isCompleted).length,
       totalTasks: previousWeekTasks.length,
@@ -181,7 +179,8 @@ class AnalyticsCalculator {
         description: 'Mock task from previous week',
         priority: TaskPriority.medium,
         createdAt: DateTime.now().subtract(const Duration(days: 8)),
-        pomodoroCount: 1,
+        // COMMENTED OUT - Pomodoro functionality
+        // pomodoroCount: 1,
         isCompleted: true,
       ),
       Task(
@@ -190,7 +189,8 @@ class AnalyticsCalculator {
         description: 'Another mock task from previous week',
         priority: TaskPriority.high,
         createdAt: DateTime.now().subtract(const Duration(days: 9)),
-        pomodoroCount: 2,
+        // COMMENTED OUT - Pomodoro functionality
+        // pomodoroCount: 2,
         isCompleted: false,
       ),
     ];

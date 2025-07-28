@@ -34,281 +34,252 @@ class CircularProgressIndicator3D extends StatefulWidget {
 class _CircularProgressIndicator3DState
     extends State<CircularProgressIndicator3D> with TickerProviderStateMixin {
   late AnimationController _progressController;
-  late AnimationController _pulseController;
-  late AnimationController _rotationController;
 
   late Animation<double> _progressAnimation;
-  late Animation<double> _pulseAnimation;
-  late Animation<double> _rotationAnimation;
+
+  // Cache computed values to avoid recalculation
+  late Color _primaryColor;
+  late Color _backgroundColor;
+  late int _progressPercentage;
+  late double _progressValue;
 
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
+    _updateCachedValues();
+  }
 
-    // Progress animation controller
+  void _initializeAnimations() {
+    // Progress animation controller - only animation we need
     _progressController = AnimationController(
       duration: widget.animationDuration,
       vsync: this,
     );
 
-    // Pulse animation controller for the glow effect
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
+    // Create progress animation
+    _progressValue =
+        widget.totalTasks > 0 ? widget.completedTasks / widget.totalTasks : 0.0;
 
-    // Rotation animation controller for subtle 3D effect
-    _rotationController = AnimationController(
-      duration: const Duration(seconds: 60),
-      vsync: this,
-    );
-
-    // Create animations
     _progressAnimation = Tween<double>(
       begin: 0.0,
-      end: widget.totalTasks > 0
-          ? widget.completedTasks / widget.totalTasks
-          : 0.0,
+      end: _progressValue,
     ).animate(CurvedAnimation(
       parent: _progressController,
       curve: Curves.easeOutCubic,
     ));
 
-    _pulseAnimation = Tween<double>(
-      begin: 0.7,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
-
-    _rotationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 2 * math.pi,
-    ).animate(CurvedAnimation(
-      parent: _rotationController,
-      curve: Curves.linear,
-    ));
-
-    // Start animations
+    // Start progress animation
     _progressController.forward();
-    _pulseController.repeat(reverse: true);
-    _rotationController.repeat();
+  }
+
+  void _updateCachedValues() {
+    _primaryColor = widget.primaryColor ?? AppColors.accentPurple;
+    _backgroundColor =
+        widget.backgroundColor ?? const Color.fromARGB(255, 38, 38, 38);
+    _progressValue =
+        widget.totalTasks > 0 ? widget.completedTasks / widget.totalTasks : 0.0;
+    _progressPercentage = (_progressValue * 100).round();
   }
 
   @override
   void dispose() {
     _progressController.dispose();
-    _pulseController.dispose();
-    _rotationController.dispose();
     super.dispose();
   }
 
   @override
   void didUpdateWidget(CircularProgressIndicator3D oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.completedTasks != widget.completedTasks ||
-        oldWidget.totalTasks != widget.totalTasks) {
-      _progressAnimation = Tween<double>(
-        begin: _progressAnimation.value,
-        end: widget.totalTasks > 0
-            ? widget.completedTasks / widget.totalTasks
-            : 0.0,
-      ).animate(CurvedAnimation(
-        parent: _progressController,
-        curve: Curves.easeOutCubic,
-      ));
-      _progressController.reset();
-      _progressController.forward();
+
+    // Check if progress-related values changed
+    bool progressChanged = oldWidget.completedTasks != widget.completedTasks ||
+        oldWidget.totalTasks != widget.totalTasks;
+
+    // Check if visual properties changed
+    bool visualChanged = oldWidget.primaryColor != widget.primaryColor ||
+        oldWidget.backgroundColor != widget.backgroundColor;
+
+    if (progressChanged || visualChanged) {
+      _updateCachedValues();
+
+      if (progressChanged) {
+        _progressAnimation = Tween<double>(
+          begin: _progressAnimation.value,
+          end: _progressValue,
+        ).animate(CurvedAnimation(
+          parent: _progressController,
+          curve: Curves.easeOutCubic,
+        ));
+        _progressController.reset();
+        _progressController.forward();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = widget.primaryColor ?? AppColors.accentPurple;
-    final backgroundColor =
-        widget.backgroundColor ?? const Color.fromARGB(255, 38, 38, 38);
-    final progressPercentage = widget.totalTasks > 0
-        ? (widget.completedTasks / widget.totalTasks * 100).round()
-        : 0;
-
-    return AnimatedBuilder(
-      animation: Listenable.merge([
-        _progressController,
-        _pulseController,
-        _rotationController,
-      ]),
-      builder: (context, child) {
-        return GestureDetector(
-          onTap: widget.onTap,
-          child: SizedBox(
-            width: widget.size,
-            height: widget.size,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Background glow effect (fixed size to prevent morphing)
-                Container(
-                  width: widget.size,
-                  height: widget.size,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryColor.withValues(
-                            alpha: 0.1 * _pulseAnimation.value),
-                        blurRadius: 50 * _pulseAnimation.value,
-                        spreadRadius: 20,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Outer glassmorphism ring
-                Container(
-                  width: widget.size,
-                  height: widget.size,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.glassBackground,
-                        AppColors.glassBackground.withValues(alpha: 0.05),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: AppColors.glassBorder,
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                      BoxShadow(
-                        color: primaryColor.withValues(alpha: 0.1),
-                        blurRadius: 40,
-                        spreadRadius: -10,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 3D Progress Ring (removed distorting transforms)
-                CustomPaint(
-                  size: Size(widget.size - 20, widget.size - 20),
-                  painter: CircularProgress3DPainter(
-                    progress: _progressAnimation.value,
-                    primaryColor: primaryColor,
-                    backgroundColor: backgroundColor,
-                    strokeWidth: widget.strokeWidth * 1.2,
-                    rotationOffset: _rotationAnimation.value *
-                        0.05, // Subtle rotation for gradient
-                  ),
-                ),
-
-                // Center content
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Progress percentage
-                    if (widget.showPercentage)
-                      Text(
-                        '$progressPercentage%',
-                        style: AppTextStyles.h1.copyWith(
-                          fontSize: widget.size * 0.15,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                          shadows: [
-                            Shadow(
-                              color: primaryColor.withValues(alpha: 0.3),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      Text(
-                        '$progressPercentage%',
-                        style: AppTextStyles.h1.copyWith(
-                          fontSize: widget.size * 0.15,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                          shadows: [
-                            Shadow(
-                              color: primaryColor.withValues(alpha: 0.3),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    const SizedBox(height: 4),
-
-                    // Task count
-                    if (!widget.showPercentage)
-                      Text(
-                        '${widget.completedTasks}/${widget.totalTasks} tasks',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontSize: widget.size * 0.06,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-
-                    const SizedBox(height: 8),
-
-                    // Status indicator
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor().withValues(alpha: 0.2),
-                        borderRadius:
-                            BorderRadius.circular(AppBorderRadius.full),
-                        border: Border.all(
-                          color: _getStatusColor().withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        _getStatusText(),
-                        style: AppTextStyles.caption.copyWith(
-                          color: _getStatusColor(),
-                          fontWeight: FontWeight.w600,
-                          fontSize: widget.size * 0.04,
-                        ),
-                      ),
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: SizedBox(
+        width: widget.size,
+        height: widget.size,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Static glow effect - no animation to prevent repaints
+            RepaintBoundary(
+              child: Container(
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _primaryColor.withValues(alpha: 0.08),
+                      blurRadius: 40,
+                      spreadRadius: 20,
                     ),
                   ],
                 ),
-              ],
+              ),
+            ),
+
+            // Static glassmorphism ring - no animation
+            RepaintBoundary(
+              child: Container(
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.glassBackground,
+                      AppColors.glassBackground.withValues(alpha: 0.05),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: AppColors.glassBorder,
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                    BoxShadow(
+                      color: _primaryColor.withValues(alpha: 0.1),
+                      blurRadius: 40,
+                      spreadRadius: -10,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Animated progress ring - only listens to progress controller
+            AnimatedBuilder(
+              animation: _progressController,
+              builder: (context, child) {
+                return RepaintBoundary(
+                  child: CustomPaint(
+                    size: Size(widget.size - 20, widget.size - 20),
+                    painter: CircularProgress3DPainter(
+                      progress: _progressAnimation.value,
+                      primaryColor: _primaryColor,
+                      backgroundColor: _backgroundColor,
+                      strokeWidth: widget.strokeWidth * 1.2,
+                      rotationOffset: 0.0, // Static rotation offset
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            // Static center content - only rebuilds when progress values change
+            RepaintBoundary(
+              child: _buildCenterContent(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCenterContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Progress percentage
+        Text(
+          '$_progressPercentage%',
+          style: AppTextStyles.h1.copyWith(
+            fontSize: widget.size * 0.15,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+            shadows: [
+              Shadow(
+                color: _primaryColor.withValues(alpha: 0.3),
+                blurRadius: 10,
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        // Task count
+        if (!widget.showPercentage)
+          Text(
+            '${widget.completedTasks}/${widget.totalTasks} tasks',
+            style: AppTextStyles.bodySmall.copyWith(
+              fontSize: widget.size * 0.06,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
             ),
           ),
-        );
-      },
+
+        const SizedBox(height: 8),
+
+        // Status indicator
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: _getStatusColor().withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(AppBorderRadius.full),
+            border: Border.all(
+              color: _getStatusColor().withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            _getStatusText(),
+            style: AppTextStyles.caption.copyWith(
+              color: _getStatusColor(),
+              fontWeight: FontWeight.w600,
+              fontSize: widget.size * 0.04,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Color _getStatusColor() {
-    final progress =
-        widget.totalTasks > 0 ? widget.completedTasks / widget.totalTasks : 0.0;
-    if (progress >= 1.0) return AppColors.statusSuccess;
-    if (progress >= 0.7) return AppColors.accentGreen;
-    if (progress >= 0.4) return AppColors.accentYellow;
+    if (_progressValue >= 1.0) return AppColors.statusSuccess;
+    if (_progressValue >= 0.7) return AppColors.accentGreen;
+    if (_progressValue >= 0.4) return AppColors.accentYellow;
     if (widget.totalTasks == 0) return AppColors.accentGreen;
     return AppColors.accentOrange;
   }
 
   String _getStatusText() {
-    final progress =
-        widget.totalTasks > 0 ? widget.completedTasks / widget.totalTasks : 0.0;
-    if (progress >= 1.0) return 'Complete';
-    if (progress >= 0.7) return 'Almost there';
-    if (progress >= 0.4) return 'In progress';
+    if (_progressValue >= 1.0) return 'Complete';
+    if (_progressValue >= 0.7) return 'Almost there';
+    if (_progressValue >= 0.4) return 'In progress';
     if (widget.totalTasks == 0) return "Let's start";
     return 'Getting started';
   }
@@ -321,7 +292,7 @@ class CircularProgress3DPainter extends CustomPainter {
   final double strokeWidth;
   final double rotationOffset;
 
-  CircularProgress3DPainter({
+  const CircularProgress3DPainter({
     required this.progress,
     required this.primaryColor,
     required this.backgroundColor,
@@ -399,5 +370,33 @@ class CircularProgress3DPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CircularProgress3DPainter oldDelegate) {
+    return progress != oldDelegate.progress ||
+        primaryColor != oldDelegate.primaryColor ||
+        backgroundColor != oldDelegate.backgroundColor ||
+        strokeWidth != oldDelegate.strokeWidth ||
+        rotationOffset != oldDelegate.rotationOffset;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is CircularProgress3DPainter &&
+        other.progress == progress &&
+        other.primaryColor == primaryColor &&
+        other.backgroundColor == backgroundColor &&
+        other.strokeWidth == strokeWidth &&
+        other.rotationOffset == rotationOffset;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      progress,
+      primaryColor,
+      backgroundColor,
+      strokeWidth,
+      rotationOffset,
+    );
+  }
 }

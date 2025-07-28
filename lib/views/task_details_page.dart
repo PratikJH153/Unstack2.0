@@ -1,9 +1,10 @@
-import 'dart:async';
+// COMMENTED OUT - Timer-related imports (Pomodoro functionality)
+// import 'dart:async';
+// import 'package:flutter/services.dart';
+// import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:unstack/models/task.dart';
+import 'package:unstack/models/task.model.dart';
 import 'package:unstack/theme/app_theme.dart';
 
 class TaskDetailsPage extends StatefulWidget {
@@ -24,22 +25,22 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
     with TickerProviderStateMixin {
   late Task _currentTask;
 
-  // Pomodoro timer state
-  Timer? _timer;
-  bool _isTimerRunning = false;
-  bool _isTimerPaused = false;
-  bool _isBreakTime = false;
+  // Pomodoro timer state - COMMENTED OUT
+  // Timer? _timer;
+  // bool _isTimerRunning = false;
+  // bool _isTimerPaused = false;
+  // bool _isBreakTime = false;
 
-  // Timer configuration
-  int _selectedDuration = 25; // Default 25 minutes
-  final List<int> _durationOptions = [15, 25, 30, 45];
-  int _remainingSeconds = 25 * 60;
-  int _totalSeconds = 25 * 60;
+  // Timer configuration - COMMENTED OUT
+  // int _selectedDuration = 25; // Default 25 minutes
+  // final List<int> _durationOptions = [15, 25, 30, 45];
+  // int _remainingSeconds = 25 * 60;
+  // int _totalSeconds = 25 * 60;
 
-  // Break configuration
-  final int _shortBreakDuration = 5; // 5 minutes
-  final int _longBreakDuration = 15; // 15 minutes
-  int _completedSessions = 0;
+  // Break configuration - COMMENTED OUT
+  // final int _shortBreakDuration = 5; // 5 minutes
+  // final int _longBreakDuration = 15; // 15 minutes
+  // int _completedSessions = 0;
 
   @override
   void initState() {
@@ -56,7 +57,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
 
   @override
   void dispose() {
-    _timer?.cancel();
+    // _timer?.cancel(); // COMMENTED OUT - Pomodoro timer cleanup
     super.dispose();
   }
 
@@ -64,10 +65,32 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      body: _buildPomodoroTimerView(),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header Section
+            _buildHeader(),
+
+            // Main Content - Pomodoro timer functionality commented out
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Pomodoro Timer Functionality\nTemporarily Disabled',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.h3.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
+  // COMMENTED OUT - Pomodoro timer view
+  /*
   Widget _buildPomodoroTimerView() {
     return SafeArea(
       child: Column(
@@ -109,6 +132,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
       ),
     );
   }
+  */
 
   Widget _buildHeader() {
     return Container(
@@ -170,7 +194,8 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
 
                 const SizedBox(height: AppSpacing.sm),
 
-                // Session counter
+                // COMMENTED OUT - Session counter (Pomodoro functionality)
+                /*
                 if (_completedSessions > 0)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -193,6 +218,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
                       ),
                     ),
                   ),
+                */
               ],
             ),
           ),
@@ -201,6 +227,8 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
     );
   }
 
+  // COMMENTED OUT - Timer configuration method
+  /*
   Widget _buildTimerConfiguration() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -258,7 +286,10 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
       ),
     );
   }
+  */
 
+  // COMMENTED OUT - Timer display method
+  /*
   Widget _buildTimerDisplay() {
     final progress = _totalSeconds > 0
         ? (_totalSeconds - _remainingSeconds) / _totalSeconds
@@ -382,7 +413,10 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
       ],
     );
   }
+  */
 
+  // COMMENTED OUT - Session controls method
+  /*
   Widget _buildSessionControls() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -467,8 +501,10 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
       ),
     );
   }
+  */
 
-  // Timer control methods
+  // COMMENTED OUT - Timer control methods
+  /*
   void _startTimer() {
     setState(() {
       _isTimerRunning = true;
@@ -661,4 +697,5 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
       ),
     );
   }
+  */
 }

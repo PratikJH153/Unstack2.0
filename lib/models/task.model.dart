@@ -31,19 +31,6 @@ enum TaskPriority {
         return 'Urgent';
     }
   }
-
-  IconData get icon {
-    switch (this) {
-      case TaskPriority.low:
-        return Icons.flag;
-      case TaskPriority.medium:
-        return Icons.flag;
-      case TaskPriority.high:
-        return Icons.flag;
-      case TaskPriority.urgent:
-        return Icons.flag;
-    }
-  }
 }
 
 enum TaskSortOption {
@@ -71,9 +58,6 @@ class Task {
   final DateTime createdAt;
   final DateTime? dueDate;
   final bool isCompleted;
-  final int pomodoroCount;
-  final List<String> tags;
-  final Color? customColor;
 
   const Task({
     required this.id,
@@ -83,9 +67,6 @@ class Task {
     required this.createdAt,
     this.dueDate,
     this.isCompleted = false,
-    this.pomodoroCount = 0,
-    this.tags = const [],
-    this.customColor,
   });
 
   Task copyWith({
@@ -96,10 +77,6 @@ class Task {
     DateTime? createdAt,
     DateTime? dueDate,
     bool? isCompleted,
-    int? pomodoroCount,
-    int? estimatedPomodoros,
-    List<String>? tags,
-    Color? customColor,
   }) {
     return Task(
       id: id ?? this.id,
@@ -109,9 +86,6 @@ class Task {
       createdAt: createdAt ?? this.createdAt,
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
-      pomodoroCount: pomodoroCount ?? this.pomodoroCount,
-      tags: tags ?? this.tags,
-      customColor: customColor ?? this.customColor,
     );
   }
 
@@ -159,20 +133,16 @@ class TaskData {
         title: 'Complete this task and swipe up',
         description: 'Check the box above to finish and move to the next step.',
         priority: TaskPriority.urgent,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
+        createdAt: DateTime.now(),
         dueDate: DateTime.now().add(const Duration(days: 1)),
-        pomodoroCount: 2,
-        tags: ['development', 'flutter', 'urgent'],
       ),
       Task(
         id: '2',
         title: 'Add your first task',
         description: 'Tap the + icon above to start planning your work.',
         priority: TaskPriority.medium,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
+        createdAt: DateTime.now(),
         dueDate: DateTime.now().add(const Duration(days: 3)),
-        pomodoroCount: 1,
-        tags: ['documentation', 'design'],
       ),
       Task(
         id: '3',
@@ -180,39 +150,8 @@ class TaskData {
         description:
             'Conduct user testing sessions to gather feedback on the app interface',
         priority: TaskPriority.high,
-        createdAt: DateTime.now().subtract(const Duration(hours: 12)),
+        createdAt: DateTime.now(),
         dueDate: DateTime.now().add(const Duration(days: 2)),
-        pomodoroCount: 0,
-        tags: ['testing', 'ux'],
-      ),
-      Task(
-        id: '4',
-        title: 'Code Review',
-        description:
-            'Review pull requests and provide feedback to team members',
-        priority: TaskPriority.low,
-        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-        pomodoroCount: 1,
-        tags: ['review', 'team'],
-      ),
-      Task(
-        id: '5',
-        title: 'Update Dependencies',
-        description:
-            'Update all Flutter dependencies to latest stable versions',
-        priority: TaskPriority.medium,
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-        pomodoroCount: 1,
-        tags: ['maintenance', 'flutter'],
-      ),
-      Task(
-        id: '6',
-        title: 'Write Unit Tests',
-        description: 'Add comprehensive unit tests for core',
-        priority: TaskPriority.high,
-        createdAt: DateTime.now().subtract(const Duration(days: 4)),
-        pomodoroCount: 3,
-        tags: ['testing', 'quality'],
       ),
     ];
   }

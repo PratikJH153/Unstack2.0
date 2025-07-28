@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:unstack/models/task.dart';
+import 'package:unstack/models/task.model.dart';
 import 'package:unstack/theme/app_theme.dart';
 
 class TaskCard extends StatefulWidget {
@@ -138,7 +138,7 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            widget.task.priority.icon,
+                            Icons.flag,
                             size: 12,
                             color: widget.task.priority.color,
                           ),
