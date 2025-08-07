@@ -1,54 +1,54 @@
+import 'package:chiclet/chiclet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:unstack/theme/app_theme.dart';
+import 'package:unstack/theme/theme.dart';
+import 'package:unstack/utils/app_size.dart';
 
 class HomeAppBarButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final IconData icon;
-  final bool isPremium;
+  final Color color;
+  final Color iconColor;
 
   const HomeAppBarButton({
     required this.onPressed,
     required this.icon,
-    this.isPremium = false,
+    this.color = AppColors.backgroundPrimary,
+    this.iconColor = AppColors.whiteColor,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
+    return ChicletAnimatedButton(
+      buttonType: ChicletButtonTypes.circle,
+      backgroundColor: color,
+      height: 52,
+      width: 52,
+      onPressed: () {
         HapticFeedback.lightImpact();
         if (onPressed != null) {
           onPressed!();
         }
       },
-      borderRadius: BorderRadius.all(Radius.circular(100)),
-      child: Stack(
-        children: [
-          if (isPremium)
-            Positioned(
-              right: 8,
-              top: -2,
-              child: Image.asset(
-                "assets/images/crown.png",
-                height: 20,
-                width: 20,
-              ),
-            ),
-          Container(
-            height: 50,
-            width: 50,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.textMuted,
-                width: 0.5,
-              ),
-            ),
-            child: Icon(icon),
+      child: Container(
+        height: 52,
+        width: 52,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: color == AppColors.redShade
+                ? AppColors.redShade
+                : AppColors.backgroundSecondary,
+            width: 1.2,
           ),
-        ],
+        ),
+        child: Icon(
+          icon,
+          color: iconColor,
+          size: 24 * AppSize(context).height * 0.00115,
+        ),
       ),
     );
   }

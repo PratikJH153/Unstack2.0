@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:unstack/theme/app_theme.dart';
+
+import 'package:unstack/theme/theme.dart';
 
 class StreakStatistics extends StatelessWidget {
   final int currentStreak;
@@ -87,7 +87,7 @@ class StreakStatistics extends StatelessWidget {
                     title: 'Current Streak',
                     value: longestStreak.toString(),
                     subtitle: longestStreak == 1 ? 'day' : 'days',
-                    icon: CupertinoIcons.star_fill,
+                    icon: CupertinoIcons.flame_fill,
                     color: AppColors.accentOrange,
                   ),
                 ),
@@ -139,7 +139,7 @@ class _StreakCard extends StatelessWidget {
             color.withValues(alpha: 0.05),
           ],
         ),
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        borderRadius: BorderRadius.circular(AppBorderRadius.xxl),
         border: Border.all(
           color: color.withValues(alpha: 0.3),
           width: 1,
@@ -210,10 +210,6 @@ class _StreakCard extends StatelessWidget {
           ),
         ],
       ),
-    )
-        .animate()
-        .fadeIn(delay: Duration(milliseconds: isLarge ? 200 : 400))
-        .slideY(begin: 0.3, duration: 600.ms)
-        .scale(begin: const Offset(0.9, 0.9), duration: 600.ms);
+    );
   }
 }

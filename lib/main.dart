@@ -1,22 +1,17 @@
 import 'package:device_preview/device_preview.dart';
-import 'package:firebase_core/firebase_core.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:unstack/firebase_options.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:unstack/providers/auth_provider.dart';
 import 'package:unstack/routes/route.dart';
-import 'package:unstack/theme/app_theme.dart';
-import 'package:unstack/utils/app_logger.dart';
+import 'package:unstack/theme/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } catch (e) {
-    AppLogger.error(e.toString());
-  }
-
+  SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   runApp(
     DevicePreview(
       enabled: kDebugMode,
@@ -31,13 +26,17 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Unstack',
-      debugShowCheckedModeBanner: false,
-      debugShowMaterialGrid: false,
-      theme: AppTheme.darkTheme,
-      initialRoute: RoutePaths.homePage,
-      onGenerateRoute: AppRouter.generateRoute,
+    ResponsiveUtils.init(context);
+    return ChangeNotifierProvider(
+      create: (context) => AuthProvider(),
+      child: MaterialApp(
+        title: 'Unstack',
+        debugShowCheckedModeBanner: false,
+        debugShowMaterialGrid: false,
+        theme: AppTheme.darkTheme,
+        initialRoute: RoutePaths.splashScreen,
+        onGenerateRoute: AppRouter.generateRoute,
+      ),
     );
   }
 }

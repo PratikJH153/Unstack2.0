@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:unstack/routes/route.dart';
-import 'package:unstack/theme/app_theme.dart';
+import 'package:unstack/theme/theme.dart';
 
 class StreakWidget extends StatefulWidget {
   final int currentStreak;
@@ -24,7 +24,7 @@ class _StreakWidgetState extends State<StreakWidget> {
       },
       child: AnimatedContainer(
         duration: Duration(seconds: 1),
-        height: 50,
+        height: 48,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
         ),
@@ -66,7 +66,7 @@ class _StreakWidgetState extends State<StreakWidget> {
                   : '0 streak',
               style: TextStyle(
                 color: AppColors.whiteColor,
-                fontSize: 16,
+                fontSize: 16 * ResponsiveUtils.fontScale,
                 fontWeight: FontWeight.w600,
               ),
             ),

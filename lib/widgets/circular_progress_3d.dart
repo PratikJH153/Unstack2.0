@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:unstack/theme/app_theme.dart';
+import 'package:unstack/theme/theme.dart';
 
 class CircularProgressIndicator3D extends StatefulWidget {
   final int totalTasks;
@@ -66,7 +66,7 @@ class _CircularProgressIndicator3DState
       end: _progressValue,
     ).animate(CurvedAnimation(
       parent: _progressController,
-      curve: Curves.easeOutCubic,
+      curve: AnimationConstants.progressCurve,
     ));
 
     // Start progress animation
@@ -109,7 +109,7 @@ class _CircularProgressIndicator3DState
           end: _progressValue,
         ).animate(CurvedAnimation(
           parent: _progressController,
-          curve: Curves.easeOutCubic,
+          curve: AnimationConstants.progressCurve,
         ));
         _progressController.reset();
         _progressController.forward();

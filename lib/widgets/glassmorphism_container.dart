@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:unstack/theme/app_theme.dart';
+import 'package:unstack/theme/theme.dart';
 
 class GlassmorphismContainer extends StatelessWidget {
   final Widget child;
@@ -35,20 +35,22 @@ class GlassmorphismContainer extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             backgroundColor ?? AppColors.glassBackground,
-            (backgroundColor ?? AppColors.glassBackground).withValues(alpha: 0.05),
+            (backgroundColor ?? AppColors.glassBackground)
+                .withValues(alpha: 0.05),
           ],
         ),
         border: Border.all(
           color: borderColor ?? AppColors.glassBorder,
           width: borderWidth ?? 1,
         ),
-        boxShadow: boxShadow ?? [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: boxShadow ??
+            [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
       ),
       child: child,
     );

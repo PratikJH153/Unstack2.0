@@ -1,8 +1,8 @@
-export 'app_router.dart';
+export 'paths/app_router.dart';
 
-export 'route_paths.dart';
+export 'paths/route_paths.dart';
 
-export 'route_utils.dart';
-export 'route_observer.dart';
+export 'utils/route_utils.dart';
+export 'utils/route_observer.dart';
 
-export 'animation.dart';
+export 'animation/animation.dart';
