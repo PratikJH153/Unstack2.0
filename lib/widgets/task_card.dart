@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:unstack/models/task.dart';
-import 'package:unstack/theme/app_theme.dart';
+import 'package:unstack/models/tasks/task.model.dart';
+import 'package:unstack/theme/theme.dart';
 
 class TaskCard extends StatefulWidget {
   final Task task;
@@ -84,11 +84,10 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
               onTap: widget.onTap,
               child: Container(
                 margin: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
                   vertical: AppSpacing.sm,
                 ),
                 padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
+                  horizontal: AppSpacing.lg,
                   vertical: AppSpacing.lg,
                 ),
                 decoration: BoxDecoration(
@@ -138,7 +137,7 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            widget.task.priority.icon,
+                            Icons.flag,
                             size: 12,
                             color: widget.task.priority.color,
                           ),
@@ -167,7 +166,7 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
                             : null,
                         fontWeight: FontWeight.w600,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (widget.task.description.isNotEmpty && !widget.isCompact)

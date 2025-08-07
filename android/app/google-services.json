@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "932599717284",
+    "project_id": "unstack-321f0",
+    "storage_bucket": "unstack-321f0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:932599717284:android:3d397ada8077b098153531",
+        "android_client_info": {
+          "package_name": "com.example.unstack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHC1-Q0297fFJDYK9d8PI32c9KJowEwhY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

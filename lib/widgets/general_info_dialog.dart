@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:unstack/routes/route.dart';
-import 'package:unstack/theme/app_theme.dart';
+import 'package:unstack/theme/theme.dart';
 import 'package:unstack/widgets/buildScrollableWithFade.dart';
 import 'package:unstack/widgets/loading_widget.dart';
 
