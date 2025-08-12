@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 
+final priorityIndex = {
+  'low': 3,
+  'medium': 2,
+  'high': 1,
+  'urgent': 0,
+};
+
 enum TaskPriority {
   low,
   medium,
@@ -57,6 +64,7 @@ class Task {
   final TaskPriority priority;
   final DateTime createdAt;
   final bool isCompleted;
+  final int priorityIndex;
 
   const Task({
     required this.id,
@@ -64,6 +72,7 @@ class Task {
     required this.description,
     required this.priority,
     required this.createdAt,
+    required this.priorityIndex,
     this.isCompleted = false,
   });
 
@@ -73,7 +82,7 @@ class Task {
     String? description,
     TaskPriority? priority,
     DateTime? createdAt,
-    DateTime? dueDate,
+    int? priorityIndex,
     bool? isCompleted,
   }) {
     return Task(
@@ -82,8 +91,43 @@ class Task {
       description: description ?? this.description,
       priority: priority ?? this.priority,
       createdAt: createdAt ?? this.createdAt,
+      priorityIndex: priorityIndex ?? this.priorityIndex,
       isCompleted: isCompleted ?? this.isCompleted,
     );
+  }
+
+  factory Task.fromJson(Map<String, dynamic> json) {
+    final id = json['id'] ?? '';
+    final title = json['title'] ?? '';
+    final description = json['description'] ?? '';
+    final priority = TaskPriority.values.firstWhere(
+      (e) => e.toString() == 'TaskPriority.${json['priority']}',
+    );
+    final createdAt = DateTime.parse(json['createdAt']);
+    final isCompleted = json['isCompleted'] == 1 ? true : false;
+    final priorityIndex = json['priorityIndex'] ?? 0;
+
+    return Task(
+      id: id,
+      title: title,
+      description: description,
+      priority: priority,
+      createdAt: createdAt,
+      priorityIndex: priorityIndex,
+      isCompleted: isCompleted,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'priority': priority.name,
+      'createdAt': createdAt.toIso8601String(),
+      'priorityIndex': priorityIndex,
+      'isCompleted': isCompleted ? 1 : 0,
+    };
   }
 
   bool get isDueToday {
@@ -105,28 +149,6 @@ class Task {
 
   @override
   String toString() {
-    return 'Task(id: $id, title: $title, isCompleted: $isCompleted, priority: $priority)';
-  }
-}
-
-// Sample data for development and testing
-class TaskData {
-  static List<Task> getSampleTasks() {
-    return [
-      Task(
-        id: '1',
-        title: 'Complete this task and swipe up',
-        description: 'Check the box above to finish and move to the next step.',
-        priority: TaskPriority.urgent,
-        createdAt: DateTime.now(),
-      ),
-      Task(
-        id: '2',
-        title: 'Add your first task',
-        description: 'Tap the + icon above to start planning your work.',
-        priority: TaskPriority.medium,
-        createdAt: DateTime.now().subtract(Duration(days: 2)),
-      ),
-    ];
+    return 'Task(id: $id, title: $title, isCompleted: $isCompleted, priority: $priority createdAt: $createdAt priorityIndex: $priorityIndex)';
   }
 }

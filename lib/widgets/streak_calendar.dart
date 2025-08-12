@@ -1,13 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:unstack/models/tasks/streak_data.dart';
+import 'package:unstack/models/streak/streak.model.dart';
 import 'package:unstack/theme/theme.dart';
 
 class StreakCalendar extends StatefulWidget {
   final DateTime selectedMonth;
   final Function(DateTime) onMonthChanged;
-  final List<DayCompletionData> completionData;
+  final List<StreakModel> completionData;
 
   const StreakCalendar({
     super.key,
@@ -70,7 +70,7 @@ class _StreakCalendarState extends State<StreakCalendar> {
     return days;
   }
 
-  DayCompletionData? _getCompletionDataForDate(DateTime date) {
+  StreakModel? _getCompletionDataForDate(DateTime date) {
     try {
       return widget.completionData.firstWhere(
         (data) => _isSameDay(data.date, date),
@@ -145,7 +145,7 @@ class _StreakCalendarState extends State<StreakCalendar> {
               ),
               Text(
                 '${monthNames[_currentMonth.month - 1]} ${_currentMonth.year}',
-                style: AppTextStyles.bodyMedium.copyWith(
+                style: AppTextStyles.bodyLarge.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
@@ -233,7 +233,7 @@ class _StreakCalendarState extends State<StreakCalendar> {
 
 class _CalendarDayWidget extends StatelessWidget {
   final DateTime date;
-  final DayCompletionData? completionData;
+  final StreakModel? completionData;
   final bool isCurrentMonth;
   final bool isToday;
 

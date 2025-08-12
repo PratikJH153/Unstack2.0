@@ -1,13 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:unstack/models/tasks/task.model.dart';
+import 'package:unstack/providers/task_provider.dart';
 import 'package:unstack/routes/route.dart';
 import 'package:unstack/theme/theme.dart';
-import 'package:unstack/widgets/buildScrollableWithFade.dart';
-import 'package:unstack/widgets/task_card.dart';
+import 'package:unstack/views/tasks/task_list.dart';
 import 'package:unstack/widgets/home_app_bar_button.dart';
 
 class TasksListPage extends StatefulWidget {
@@ -18,30 +17,26 @@ class TasksListPage extends StatefulWidget {
 }
 
 class _TasksListPageState extends State<TasksListPage>
-    with TickerProviderStateMixin {
-  late List<Task> _allTasks;
-  late List<Task> _remainingTasks;
-  late List<Task> _completedTasks;
-  bool isAnimationDone = false;
-
+    with SingleTickerProviderStateMixin {
   TaskSortOption _currentSortOption = TaskSortOption.priority;
   bool _isAscending = false;
+  late TabController _tabController;
 
   @override
   void initState() {
+    _tabController = TabController(length: 2, vsync: this);
     super.initState();
-
-    _loadTasks();
   }
 
-  void _loadTasks() {
-    _allTasks = TaskData.getSampleTasks();
-    _filterAndSortTasks();
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
-  void _filterAndSortTasks() {
-    // Sort tasks
-    _allTasks.sort((a, b) {
+  void _getSortedTasks(List<Task> tasks) {
+    final sortedTasks = tasks;
+    sortedTasks.sort((a, b) {
       int comparison = 0;
       switch (_currentSortOption) {
         case TaskSortOption.dateCreated:
@@ -58,108 +53,205 @@ class _TasksListPageState extends State<TasksListPage>
       return _isAscending ? comparison : -comparison;
     });
 
-    _remainingTasks = _allTasks.where((task) => !task.isCompleted).toList();
-    _completedTasks = _allTasks.where((task) => task.isCompleted).toList();
-
-    setState(() {});
-  }
-
-  void _toggleTaskCompletion(Task task, bool isCompleted) {
-    final updatedTask = task.copyWith(isCompleted: isCompleted);
-    final index = _allTasks.indexWhere((t) => t.id == task.id);
-    if (index != -1) {
-      _allTasks[index] = updatedTask;
-      _filterAndSortTasks();
-      HapticFeedback.mediumImpact();
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    for (var task in sortedTasks) {
+      task = task.copyWith(priorityIndex: sortedTasks.indexOf(task));
+      taskProvider.updateTask(task);
     }
   }
 
-  void _deleteTask(Task task) {
-    _allTasks.removeWhere((t) => t.id == task.id);
-    _filterAndSortTasks();
-    HapticFeedback.heavyImpact();
-  }
-
-  void _showSortOptions() {
+  void _showSortOptions(List<Task> remainingTasks) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => _buildSortBottomSheet(),
+      builder: (context) => _buildSortBottomSheet(remainingTasks),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundPrimary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildAppBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Column(
-                  children: [
-                    // Remaining Tasks Tab
-                    ExpansionTile(
-                      initiallyExpanded: true,
-                      iconColor: AppColors.accentOrange,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                      ),
-                      title: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Remaining Tasks'),
-                          IconButton(
-                              onPressed: () {
-                                _showSortOptions();
-                              },
-                              icon: Icon(CupertinoIcons.sort_down))
-                        ],
-                      ),
-                      childrenPadding: EdgeInsets.zero,
-                      tilePadding: EdgeInsets.zero,
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.65,
-                          child: _buildTaskList(
-                            _remainingTasks,
-                            false,
-                          ),
-                        )
-                      ],
-                    ),
+    return Consumer<TaskProvider>(
+      builder: (context, taskProvider, child) {
+        final remainingTasks = taskProvider.tasks;
+        final completedTasks = taskProvider.completedTasks;
 
-                    ExpansionTile(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        return Scaffold(
+          backgroundColor: AppColors.backgroundPrimary,
+          body: SafeArea(
+            child: Column(
+              children: [
+                _buildAppBar(remainingTasks),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Container(
+                        margin: EdgeInsets.only(left: AppSpacing.lg),
+                        alignment: Alignment.centerLeft,
+                        child: TabBar(
+                          isScrollable: true,
+                          dividerHeight: 0,
+                          tabAlignment: TabAlignment.start,
+                          indicatorWeight: 5,
+                          physics: const NeverScrollableScrollPhysics(),
+                          controller: _tabController,
+                          labelColor: AppColors.textPrimary,
+                          unselectedLabelColor: AppColors.textMuted,
+                          indicatorColor: AppColors.whiteColor,
+                          splashBorderRadius: BorderRadius.all(
+                            Radius.circular(
+                              AppBorderRadius.lg,
+                            ),
+                          ),
+                          overlayColor:
+                              WidgetStateProperty.all(Colors.transparent),
+                          tabs: const [
+                            Tab(text: 'Remaining'),
+                            Tab(text: 'Completed'),
+                          ],
+                        ),
                       ),
-                      childrenPadding: EdgeInsets.zero,
-                      tilePadding: EdgeInsets.zero,
-                      iconColor: AppColors.accentOrange,
-                      title: Text('Completed Tasks'),
-                      children: [
-                        SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.7,
-                            child: _buildTaskList(_completedTasks, true))
-                      ],
-                    ),
-                  ],
+                      Expanded(
+                        child:
+                            TabBarView(controller: _tabController, children: [
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              left: AppSpacing.lg,
+                              right: AppSpacing.lg,
+                              top: AppSpacing.md,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                // IconButton(
+                                //   onPressed: () {
+                                //     _showSortOptions(remainingTasks);
+                                //   },
+                                //   icon: Icon(CupertinoIcons.sort_down),
+                                // ),
+                                Expanded(
+                                  child: TaskList(
+                                    tasks: remainingTasks,
+                                    isCompletedList: false,
+                                    onTaskReorder: (oldIndex, newIndex) {
+                                      final task =
+                                          remainingTasks.elementAt(oldIndex);
+                                      setState(() {
+                                        remainingTasks.removeAt(oldIndex);
+                                        remainingTasks.insert(newIndex, task);
+                                      });
+                                      final newTasksList =
+                                          remainingTasks.toList();
+                                      for (var task in newTasksList) {
+                                        task = task.copyWith(
+                                          priorityIndex:
+                                              newTasksList.indexOf(task),
+                                        );
+                                        taskProvider.updateTask(task);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              left: AppSpacing.lg,
+                              right: AppSpacing.lg,
+                              top: AppSpacing.md,
+                            ),
+                            child: TaskList(
+                              tasks: completedTasks,
+                              isCompletedList: true,
+                              onTaskReorder: (oldIndex, newIndex) {},
+                            ),
+                          ),
+                        ]),
+                      ),
+                      // // Remaining Tasks Tab
+                      // ExpansionTile(
+                      //   initiallyExpanded: true,
+                      //   iconColor: AppColors.accentOrange,
+                      //   shape: RoundedRectangleBorder(
+                      //     borderRadius:
+                      //         BorderRadius.circular(AppBorderRadius.lg),
+                      //   ),
+                      //   title: Row(
+                      //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      //     children: [
+                      //       Text('Remaining Tasks'),
+                      //       IconButton(
+                      //           onPressed: () {
+                      //             _showSortOptions(remainingTasks);
+                      //           },
+                      //           icon: Icon(CupertinoIcons.sort_down))
+                      //     ],
+                      //   ),
+                      //   childrenPadding: EdgeInsets.zero,
+                      //   tilePadding: EdgeInsets.zero,
+                      //   children: [
+                      //     SizedBox(
+                      //       height: MediaQuery.of(context).size.height * 0.6,
+                      //       child: TaskList(
+                      //         tasks: remainingTasks,
+                      //         isCompletedList: false,
+                      //         onTaskReorder: (oldIndex, newIndex) {
+                      //           final task =
+                      //               remainingTasks.elementAt(oldIndex);
+                      //           setState(() {
+                      //             remainingTasks.removeAt(oldIndex);
+                      //             remainingTasks.insert(newIndex, task);
+                      //           });
+                      //           final newTasksList = remainingTasks.toList();
+                      //           for (var task in newTasksList) {
+                      //             task = task.copyWith(
+                      //               priorityIndex: newTasksList.indexOf(task),
+                      //             );
+                      //             taskProvider.updateTask(task);
+                      //           }
+                      //         },
+                      //       ),
+                      //     )
+                      //   ],
+                      // ),
+
+                      // // Completed Tasks Tab
+                      // ExpansionTile(
+                      //   initiallyExpanded: false,
+                      //   shape: RoundedRectangleBorder(
+                      //     borderRadius:
+                      //         BorderRadius.circular(AppBorderRadius.lg),
+                      //   ),
+                      //   childrenPadding: EdgeInsets.zero,
+                      //   tilePadding: EdgeInsets.zero,
+                      //   iconColor: AppColors.accentOrange,
+                      //   title: Text('Completed Tasks'),
+                      //   children: [
+                      //     SizedBox(
+                      //       height: MediaQuery.of(context).size.height * 0.65,
+                      //       child: TaskList(
+                      //         tasks: completedTasks,
+                      //         isCompletedList: true,
+                      //         onTaskReorder: (oldIndex, newIndex) {},
+                      //       ),
+                      //     )
+                      //   ],
+                      // ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(List<Task> remainingTasks) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg).copyWith(bottom: 12),
+      padding: const EdgeInsets.all(AppSpacing.lg).copyWith(bottom: 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -170,202 +262,29 @@ class _TasksListPageState extends State<TasksListPage>
           ),
 
           // Add button
-          HomeAppBarButton(
-            onPressed: () {
-              RouteUtils.pushNamed(context, RoutePaths.addTaskPage);
-            },
-            icon: CupertinoIcons.add,
+          Row(
+            children: [
+              HomeAppBarButton(
+                onPressed: () {
+                  _showSortOptions(remainingTasks);
+                },
+                icon: CupertinoIcons.sort_down,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              HomeAppBarButton(
+                onPressed: () {
+                  RouteUtils.pushNamed(context, RoutePaths.addTaskPage);
+                },
+                icon: CupertinoIcons.add,
+              ),
+            ],
           ),
         ],
       ),
     ).slideUpStandard();
   }
 
-  Widget _buildTaskList(List<Task> tasks, bool isCompletedList) {
-    if (tasks.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isCompletedList
-                  ? CupertinoIcons.check_mark_circled
-                  : CupertinoIcons.circle,
-              size: 64,
-              color: AppColors.textMuted,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              isCompletedList ? 'No completed tasks yet' : 'No remaining tasks',
-              style: AppTextStyles.h3.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              isCompletedList
-                  ? 'Complete some tasks to see them here'
-                  : 'All tasks completed! Great job!',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textMuted,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ).scaleInStandard(
-        delay: AnimationConstants.longDelay,
-        scale: AnimationConstants.largeScale,
-      );
-    }
-
-    return buildScrollableWithFade(
-      child: ClipRRect(
-        borderRadius:
-            BorderRadiusGeometry.all(Radius.circular(AppBorderRadius.lg)),
-        child: ReorderableListView.builder(
-          onReorder: (oldIndex, newIndex) {
-            // setState(() {
-            //   final task = _remainingTasks.elementAt(oldIndex);
-            //   _remainingTasks.removeAt(oldIndex);
-            //   _remainingTasks.insert(newIndex, task);
-            // });
-          },
-          padding: const EdgeInsets.only(
-            bottom: AppSpacing.lg,
-          ),
-          proxyDecorator: (child, index, animation) {
-            return Container(
-              // margin: EdgeInsets.all(100),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceCard,
-                borderRadius: BorderRadius.all(
-                  Radius.circular(24),
-                ),
-              ),
-              child: child,
-            );
-          },
-          itemCount: tasks.length,
-          itemBuilder: (context, index) {
-            final task = tasks[index];
-            return Slidable(
-                key: Key(task.id),
-                endActionPane: ActionPane(
-                  motion: Padding(
-                    padding: const EdgeInsets.only(
-                      top: 10.0,
-                      bottom: 10,
-                      left: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        SlidableAction(
-                          onPressed: (context) async {
-                            HapticFeedback.heavyImpact();
-                            RouteUtils.pushNamed(
-                              context,
-                              RoutePaths.addTaskPage,
-                              arguments: {
-                                'task': task,
-                                'fromTaskDetails': true,
-                                'edit': true,
-                              },
-                            );
-                          },
-                          backgroundColor: AppColors.backgroundSecondary,
-                          foregroundColor: AppColors.whiteColor,
-                          borderRadius: BorderRadius.all(Radius.circular(24)),
-                          icon: CupertinoIcons.pencil,
-
-                          // label: 'Edit',
-                        ),
-                        const SizedBox(
-                          width: AppSpacing.xs,
-                        ),
-                        SlidableAction(
-                          onPressed: (context) async {
-                            HapticFeedback.heavyImpact();
-                            final result = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    backgroundColor: AppColors.surfaceCard,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          AppBorderRadius.xxl),
-                                    ),
-                                    title: Text(
-                                      'Delete Task',
-                                      style: AppTextStyles.h3.copyWith(
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                    content: Text(
-                                      'Are you sure you want to delete this task?',
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(false),
-                                        child: Text(
-                                          'Cancel',
-                                          style: TextStyle(
-                                              color: AppColors.textSecondary),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(true),
-                                        child: Text(
-                                          'Delete',
-                                          style: TextStyle(
-                                              color: AppColors.statusError),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ) ??
-                                false;
-                            if (result) {
-                              _deleteTask(task);
-                            }
-                          },
-                          backgroundColor: AppColors.redShade,
-                          foregroundColor: AppColors.whiteColor,
-                          borderRadius: BorderRadius.all(Radius.circular(24)),
-                          icon: CupertinoIcons.delete,
-                          // label: 'Delete',
-                        ),
-                      ],
-                    ),
-                  ),
-                  children: [],
-                ),
-                child: TaskCard(
-                  task: task,
-                  onToggleComplete: (isCompleted) =>
-                      _toggleTaskCompletion(task, isCompleted),
-                  onTap: () {
-                    RouteUtils.pushNamed(
-                      context,
-                      RoutePaths.taskDetailsPage,
-                      arguments: {
-                        'heroTag': 'task_${task.id}',
-                        'task': task,
-                      },
-                    );
-                  },
-                ).staggeredList(index));
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSortBottomSheet() {
+  Widget _buildSortBottomSheet(List<Task> remainingTasks) {
     return Container(
       margin: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -443,7 +362,6 @@ class _TasksListPageState extends State<TasksListPage>
                         setState(() {
                           _isAscending = !_isAscending;
                         });
-                        _filterAndSortTasks();
                       },
                       child: Icon(
                         _isAscending
@@ -458,7 +376,7 @@ class _TasksListPageState extends State<TasksListPage>
                 setState(() {
                   _currentSortOption = option;
                 });
-                _filterAndSortTasks();
+                _getSortedTasks(remainingTasks);
                 Navigator.of(context).pop();
               },
             );

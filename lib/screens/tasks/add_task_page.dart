@@ -2,8 +2,11 @@ import 'package:chiclet/chiclet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import 'package:unstack/models/tasks/task.model.dart';
+
+import 'package:unstack/providers/task_provider.dart';
 import 'package:unstack/routes/route.dart';
 import 'package:unstack/utils/app_logger.dart';
 import 'package:unstack/theme/theme.dart';
@@ -52,17 +55,74 @@ class _AddTaskPageState extends State<AddTaskPage> {
     super.dispose();
   }
 
-  void _addTask() {
+  Future<void> _addTask() async {
     final form = _formKey.currentState;
     if (form!.validate()) {
-      AppLogger.debug(_titleController.text);
-      AppLogger.debug(_descriptionController.text);
-      AppLogger.debug(_selectedPriority.toString());
-      AppLogger.debug(_selectedDateTime.toString());
-      if (fromHomePage) {
-        RouteUtils.pushReplacementNamed(context, RoutePaths.tasksListPage);
+      final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+
+      if (isEdit) {
+        // Update existing task
+        final routeData =
+            widget.routeSettings.arguments as Map<String, dynamic>?;
+        final existingTask = routeData?["task"] as Task?;
+
+        if (existingTask != null) {
+          final updatedTask = existingTask.copyWith(
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            priority: _selectedPriority,
+            priorityIndex: priorityIndex[_selectedPriority.name] ?? 0,
+          );
+
+          final success = await taskProvider.updateTask(updatedTask);
+          if (success) {
+            AppLogger.info('Task updated successfully: ${updatedTask.title}');
+          } else {
+            AppLogger.error('Failed to update task');
+            // Show error message to user
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to update task')),
+              );
+            }
+            return;
+          }
+        }
       } else {
-        RouteUtils.pop(context);
+        // Create new task
+        final newTask = Task(
+          id: DateTime.now().toIso8601String(),
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          priority: _selectedPriority,
+          createdAt: _selectedDateTime,
+          priorityIndex: priorityIndex[_selectedPriority.name] ?? 0,
+          isCompleted: false,
+        );
+
+        final success = await taskProvider.addTask(newTask);
+
+        if (success) {
+          AppLogger.info('Task created successfully: ${newTask.title}');
+        } else {
+          AppLogger.error('Failed to create task');
+          // Show error message to user
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to create task')),
+            );
+          }
+          return;
+        }
+      }
+
+      // Navigate back
+      if (mounted) {
+        if (fromHomePage) {
+          RouteUtils.pushReplacementNamed(context, RoutePaths.tasksListPage);
+        } else {
+          RouteUtils.pop(context);
+        }
       }
     }
   }

@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'package:unstack/models/tasks/streak_data.dart';
-import 'package:unstack/models/tasks/task.model.dart';
+import 'package:unstack/providers/streak_provider.dart';
 import 'package:unstack/theme/theme.dart';
 import 'package:unstack/widgets/buildScrollableWithFade.dart';
 import 'package:unstack/widgets/home_app_bar_button.dart';
@@ -28,11 +28,10 @@ class _StreakPageState extends State<StreakPage> {
   }
 
   Future<void> _loadStreakData() async {
-    await streakTracker.loadFromStorage();
+    final streakProvider = Provider.of<StreakProvider>(context, listen: false);
 
-    // Update today's completion with sample data for demonstration
-    final sampleTasks = TaskData.getSampleTasks();
-    await streakTracker.updateTodayCompletion(sampleTasks);
+    // Load streak data from database
+    await streakProvider.loadStreakData();
 
     setState(() {
       _isLoading = false;
@@ -90,16 +89,22 @@ class _StreakPageState extends State<StreakPage> {
                                 ),
                                 const SizedBox(height: AppSpacing.md),
                                 // Statistics Section
-                                StreakStatistics(
-                                  currentStreak: streakTracker.currentStreak,
-                                  longestStreak: streakTracker.longestStreak,
-                                  totalCompletedDays:
-                                      streakTracker.totalCompletedDays,
-                                  monthCompletionPercentage: streakTracker
-                                      .getMonthCompletionPercentage(
-                                          _selectedMonth),
-                                ).slideUpStandard(
-                                    delay: AnimationConstants.noDelay),
+                                Consumer<StreakProvider>(
+                                  builder: (context, streakProvider, child) {
+                                    return StreakStatistics(
+                                      currentStreak:
+                                          streakProvider.currentStreak,
+                                      longestStreak:
+                                          streakProvider.longestStreak,
+                                      totalCompletedDays:
+                                          streakProvider.totalCompletedDays,
+                                      monthCompletionPercentage: streakProvider
+                                          .getMonthCompletionPercentage(
+                                              _selectedMonth),
+                                    ).slideUpStandard(
+                                        delay: AnimationConstants.noDelay);
+                                  },
+                                ),
                                 const SizedBox(height: AppSpacing.md),
 
                                 // Calendar Section
@@ -148,19 +153,21 @@ class _StreakPageState extends State<StreakPage> {
                                       //   ),
                                       // ),
                                       // const SizedBox(height: AppSpacing.lg),
-                                      StreakCalendar(
-                                        selectedMonth: _selectedMonth,
-                                        onMonthChanged: _onMonthChanged,
-                                        completionData: streakTracker
-                                            .getMonthData(_selectedMonth),
+                                      Consumer<StreakProvider>(
+                                        builder:
+                                            (context, streakProvider, child) {
+                                          return StreakCalendar(
+                                            selectedMonth: _selectedMonth,
+                                            onMonthChanged: _onMonthChanged,
+                                            completionData: streakProvider
+                                                .getMonthData(_selectedMonth),
+                                          );
+                                        },
                                       ),
                                     ],
                                   ),
                                 ).slideUpStandard(
                                     delay: AnimationConstants.longDelay),
-
-                                // Bottom spacing
-                                const SizedBox(height: AppSpacing.xl),
                               ]),
                         ),
                       ),

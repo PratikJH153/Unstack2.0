@@ -15,7 +15,7 @@ import 'package:unstack/screens/profile/profile_page.dart';
 import 'package:unstack/screens/tasks/tasks_list.dart';
 import 'package:unstack/views/tasks/task_details_page.dart';
 import 'package:unstack/screens/streak/streak_page.dart';
-import 'package:unstack/screens/tasks/progress_analytics_page.dart';
+
 import 'route_paths.dart';
 
 class AppRouter {
@@ -69,7 +69,7 @@ class AppRouter {
         return _buildRoute(
           page: TaskDetailsPage(
             heroTag: args?['heroTag'] ?? 'task_details',
-            task: args?['task'],
+            taskID: args?['taskID'],
           ),
           settings: settings,
         );
@@ -96,14 +96,7 @@ class AppRouter {
           page: const SignInPage(),
           settings: settings,
         );
-      case RoutePaths.progressAnalyticsPage:
-        final args = settings.arguments as Map<String, dynamic>?;
-        return _buildRoute(
-          page: ProgressAnalyticsPage(
-            tasks: args?['tasks'] ?? [],
-          ),
-          settings: settings,
-        );
+
       default:
         return _buildRoute(
           settings: settings,

@@ -26,6 +26,6 @@ String _getDaySuffix(int day) {
 }
 
 String daysAgo(DateTime date) {
-  final days = (DateTime.now().difference(date).inDays).abs();
-  return '$days days ago';
+  final days = (DateTime.now().difference(date).inDays).abs() + 1;
+  return '$days ${days == 1 ? 'day' : 'days'} ago';
 }

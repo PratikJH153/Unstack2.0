@@ -2,7 +2,7 @@ class UserModel {
   final String id;
   final String username;
 
-  final DateTime? createdAt;
+  final String? createdAt;
 
   UserModel({
     required this.id,
@@ -19,9 +19,7 @@ class UserModel {
     return UserModel(
       id: userData['id'] ?? '',
       username: userData['username'],
-      createdAt: userData['createdAt'] != null
-          ? DateTime.parse(userData['createdAt'])
-          : null,
+      createdAt: userData['createdAt'],
     );
   }
 
@@ -33,14 +31,14 @@ class UserModel {
   Map<String, dynamic> toJson() {
     return {
       'username': username,
-      'createdAt': createdAt?.toIso8601String(),
+      'createdAt': createdAt,
     };
   }
 
   UserModel copyWith({
     String? id,
     String? username,
-    DateTime? createdAt,
+    String? createdAt,
   }) {
     return UserModel(
       id: id ?? this.id,

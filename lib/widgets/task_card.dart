@@ -84,7 +84,7 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
               onTap: widget.onTap,
               child: Container(
                 margin: EdgeInsets.symmetric(
-                  vertical: AppSpacing.sm,
+                  vertical: 6,
                 ),
                 padding: EdgeInsets.symmetric(
                   horizontal: AppSpacing.lg,

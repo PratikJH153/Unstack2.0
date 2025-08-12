@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:unstack/providers/auth_provider.dart';
-import 'package:unstack/screens/auth/sign_in_page.dart';
+import 'package:unstack/screens/auth/onboarding_screen.dart';
 import 'package:unstack/screens/home/home.dart';
 import 'package:unstack/widgets/loading_widget.dart';
 
@@ -24,7 +24,7 @@ class WrapperPage extends StatelessWidget {
             return const HomePage();
           case AuthState.unauthenticated:
           case AuthState.error:
-            return const SignInPage();
+            return const OnboardingScreen();
         }
       },
     );
