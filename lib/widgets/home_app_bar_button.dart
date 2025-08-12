@@ -38,8 +38,8 @@ class HomeAppBarButton extends StatelessWidget {
           color: color,
           shape: BoxShape.circle,
           border: Border.all(
-            color: color == AppColors.redShade
-                ? AppColors.redShade
+            color: color != AppColors.backgroundPrimary
+                ? color
                 : AppColors.backgroundSecondary,
             width: 1.2,
           ),

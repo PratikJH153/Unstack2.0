@@ -8,8 +8,6 @@ import 'package:unstack/routes/utils/route_utils.dart';
 import 'package:unstack/theme/theme.dart';
 import 'package:unstack/widgets/auth/sign_in_as_guest_button.dart';
 
-import 'package:unstack/widgets/general_info_dialog.dart';
-
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
 
@@ -53,9 +51,7 @@ class _SignInPageState extends State<SignInPage> {
             style: AppTextStyles.bodySmall,
           ),
           InkWell(
-            onTap: () {
-              GeneralInfoDialog.show(context, 'assets/files/terms.md');
-            },
+            onTap: () {},
             child: Text(
               'Terms & Conditions',
               style: AppTextStyles.bodySmall.copyWith(
@@ -131,7 +127,7 @@ class _SignInPageState extends State<SignInPage> {
                     ),
                   ],
                 ).slideUpStandard(delay: AnimationConstants.mediumDelay),
-                Center(child: termsAndConditions(context)),
+                // Center(child: termsAndConditions(context)),
               ],
             ),
           ),

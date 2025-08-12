@@ -37,6 +37,6 @@ class RouteUtils {
   }
 
   static void pop<T>(BuildContext context, [T? result]) {
-    Navigator.of(context).pop<T>(result);
+    return Navigator.of(context).pop<T>(result);
   }
 }

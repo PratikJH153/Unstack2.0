@@ -1,8 +1,14 @@
+import 'package:chiclet/chiclet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:unstack/providers/streak_provider.dart';
+import 'package:unstack/providers/task_provider.dart';
 import 'package:unstack/theme/theme.dart';
+import 'package:unstack/widgets/delete_task_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -16,7 +22,7 @@ void showProfileModal(BuildContext context) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
+    backgroundColor: AppColors.backgroundPrimary,
     builder: (context) => const ProfileModalSheet(),
   );
 }
@@ -160,7 +166,45 @@ class _ProfileModalSheetState extends State<ProfileModalSheet> {
           _buildDivider(),
           _buildSettingsRow(
             title: 'Reset Data',
-            onTap: () {},
+            onTap: () async {
+              final result = await showDeleteDialog(
+                    context: context,
+                    onDelete: () async {
+                      // Reset all app data
+                      final taskProvider =
+                          Provider.of<TaskProvider>(context, listen: false);
+                      await taskProvider.deleteAllTasks();
+
+                      if (mounted) {
+                        final streakProvider =
+                            Provider.of<StreakProvider>(context, listen: false);
+                        await streakProvider.resetStreak();
+                      }
+
+                      HapticFeedback.heavyImpact();
+                      if (mounted) {
+                        Navigator.of(context).pop(true);
+                      }
+                    },
+                    title: 'Reset Data',
+                    description:
+                        'This will delete all tasks and reset app settings. Your username will be preserved. This action cannot be undone.',
+                    buttonTitle: 'Reset',
+                  ) ??
+                  false;
+
+              if (result) {
+                // Show success message
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('App data has been reset successfully'),
+                      backgroundColor: AppColors.accentGreen,
+                    ),
+                  );
+                }
+              }
+            },
             warning: true,
             showArrow: true,
           ),
@@ -191,6 +235,16 @@ class _ProfileModalSheetState extends State<ProfileModalSheet> {
     );
   }
 
+  Future<void> _launchPlayStore() async {
+    final url = Uri.parse(
+        'https://play.google.com/store/apps/details?id=YOUR_PACKAGE_NAME');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
   Widget _buildFeedbackAndCreditsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,7 +253,7 @@ class _ProfileModalSheetState extends State<ProfileModalSheet> {
         _buildSettingsContainer([
           _buildSettingsRow(
             title: 'Rate the app on the Play Store',
-            onTap: () => _showComingSoonDialog('App Store Rating'),
+            onTap: _launchPlayStore,
             showArrow: true,
           ),
         ]),
@@ -331,216 +385,92 @@ class _ProfileModalSheetState extends State<ProfileModalSheet> {
     final TextEditingController controller =
         TextEditingController(text: _userName);
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.7),
+      enableDrag: true,
+      showDragHandle: true,
+      shape: RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xxl)),
+        side: BorderSide(
+          color: AppColors.glassBorder.withValues(alpha: 0.3),
+          width: 1,
+          style: BorderStyle.solid,
+        ),
+      ),
+      backgroundColor: AppColors.backgroundPrimary,
       builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.backgroundPrimary.withValues(alpha: 0.95),
-                  AppColors.backgroundSecondary.withValues(alpha: 0.9),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(AppBorderRadius.xxl),
-              border: Border.all(
-                color: AppColors.glassBorder.withValues(alpha: 0.3),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  blurRadius: 32,
-                  offset: const Offset(0, 16),
+        return Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Edit Username',
+                style: AppTextStyles.h3.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
-                BoxShadow(
-                  color: AppColors.accentPurple.withValues(alpha: 0.1),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: controller,
+                style: AppTextStyles.h2.copyWith(
+                  color: AppColors.textPrimary,
                 ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Edit Username',
-                  style: AppTextStyles.h3.copyWith(
+                decoration: InputDecoration(
+                  filled: false,
+                  border: UnderlineInputBorder(
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.whiteColor,
+                    ),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: AppColors.whiteColor,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                  hintText: 'Enter your username',
+                  hintStyle: AppTextStyles.h2.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              ChicletAnimatedButton(
+                width: double.infinity,
+                onPressed: () async {
+                  final newName = controller.text.trim();
+                  if (newName.isNotEmpty) {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setString('user_name', newName);
+                    if (mounted) {
+                      setState(() {
+                        _userName = newName;
+                      });
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                      HapticFeedback.lightImpact();
+                    }
+                  }
+                },
+                child: Text(
+                  'Save',
+                  style: AppTextStyles.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.backgroundSecondary.withValues(alpha: 0.8),
-                        AppColors.backgroundSecondary.withValues(alpha: 0.4),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xxl),
-                    border: Border.all(
-                      color: AppColors.glassBorder.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: TextField(
-                    controller: controller,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      filled: false,
-                      border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppBorderRadius.xxl),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppBorderRadius.xxl),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppBorderRadius.xxl),
-                        borderSide: BorderSide(
-                          color: AppColors.accentPurple.withValues(alpha: 0.5),
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                        vertical: AppSpacing.lg,
-                      ),
-                      hintText: 'Enter your username',
-                      hintStyle: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppColors.backgroundSecondary
-                                  .withValues(alpha: 0.8),
-                              AppColors.backgroundSecondary
-                                  .withValues(alpha: 0.4),
-                            ],
-                          ),
-                          borderRadius:
-                              BorderRadius.circular(AppBorderRadius.lg),
-                          border: Border.all(
-                            color: AppColors.glassBorder.withValues(alpha: 0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            foregroundColor: AppColors.textPrimary,
-                            padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.lg),
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppBorderRadius.lg),
-                            ),
-                          ),
-                          child: Text(
-                            'Cancel',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppColors.accentPurple,
-                              AppColors.accentBlue,
-                            ],
-                          ),
-                          borderRadius:
-                              BorderRadius.circular(AppBorderRadius.lg),
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  AppColors.accentPurple.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            final newName = controller.text.trim();
-                            if (newName.isNotEmpty) {
-                              final prefs =
-                                  await SharedPreferences.getInstance();
-                              await prefs.setString('user_name', newName);
-                              if (mounted) {
-                                setState(() {
-                                  _userName = newName;
-                                });
-                                if (context.mounted) {
-                                  Navigator.of(context).pop();
-                                }
-                                HapticFeedback.lightImpact();
-                              }
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            foregroundColor: AppColors.textInverse,
-                            padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.lg),
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppBorderRadius.lg),
-                            ),
-                            shadowColor: Colors.transparent,
-                          ),
-                          child: Text(
-                            'Save',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ).scaleInStandard(
-          scale: AnimationConstants.largeScale,
         );
       },
     );
@@ -564,7 +494,7 @@ class _ProfileModalSheetState extends State<ProfileModalSheet> {
                   AppColors.backgroundSecondary.withValues(alpha: 0.9),
                 ],
               ),
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+              borderRadius: BorderRadius.circular(AppBorderRadius.xxl),
               border: Border.all(
                 color: AppColors.glassBorder.withValues(alpha: 0.3),
                 width: 1,
@@ -627,43 +557,23 @@ class _ProfileModalSheetState extends State<ProfileModalSheet> {
                 const SizedBox(height: AppSpacing.xl),
                 SizedBox(
                   width: double.infinity,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          AppColors.accentBlue,
-                          AppColors.accentPurple,
-                        ],
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.whiteColor,
+                      foregroundColor: AppColors.blackColor,
+                      padding:
+                          const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                       ),
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.accentBlue.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      shadowColor: Colors.transparent,
                     ),
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        foregroundColor: AppColors.textInverse,
-                        padding:
-                            const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppBorderRadius.lg),
-                        ),
-                        shadowColor: Colors.transparent,
-                      ),
-                      child: Text(
-                        'Got it',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                    child: Text(
+                      'Got it',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.blackColor,
                       ),
                     ),
                   ),

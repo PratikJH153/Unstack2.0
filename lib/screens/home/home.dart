@@ -1,15 +1,19 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import 'package:just_audio/just_audio.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:unstack/helper/date_format.dart';
 import 'package:unstack/models/tasks/task.model.dart';
-import 'package:unstack/models/tasks/streak_data.dart';
+import 'package:unstack/providers/streak_provider.dart';
+import 'package:unstack/providers/task_provider.dart';
 
 import 'package:unstack/routes/route.dart';
 
@@ -33,13 +37,13 @@ class _HomePageState extends State<HomePage> {
   String _userName = '';
   late ConfettiController _confettiController;
   bool isStreak = false;
-  late List<Task> tasks;
+  final List<String> _hiddenCompletedTaskIds =
+      []; // Track tasks that have been swiped up
 
   @override
   void initState() {
     super.initState();
     _confettiController = ConfettiController(duration: Duration(seconds: 2));
-    tasks = TaskData.getSampleTasks();
 
     _loadUserName();
     _initializeStreakTracking();
@@ -52,15 +56,39 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _initializeStreakTracking() async {
-    await streakTracker.loadFromStorage();
+    final streakProvider = Provider.of<StreakProvider>(context, listen: false);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+
+    // Update today's streak with current tasks
+    // await streakProvider.updateTodayStreak(taskProvider.getTodaysTasks());
     await _updateStreakData();
   }
 
   Future<void> _updateStreakData() async {
-    await streakTracker.updateTodayCompletion(tasks);
+    final streakProvider = Provider.of<StreakProvider>(context, listen: false);
     setState(() {
-      isStreak = streakTracker.currentStreak > 0;
+      isStreak = streakProvider.currentStreak > 0;
     });
+  }
+
+  void _checkForStreakOverlay() {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final streakProvider = Provider.of<StreakProvider>(context, listen: false);
+
+    final remainingTasks = taskProvider.tasks
+        .where((t) => !_hiddenCompletedTaskIds.contains(t.id))
+        .toList();
+
+    if (remainingTasks.every((t) => t.isCompleted)) {
+      showStreakOverlay(
+        context,
+        streakProvider.currentStreak + 1,
+      );
+    }
+  }
+
+  Future<void> _onTaskSwipedUp(int newTopCardIndex) async {
+    HapticFeedback.lightImpact();
   }
 
   Future<void> _loadUserName() async {
@@ -99,232 +127,278 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  List<Task> getTasks(
+    TaskProvider taskProvider,
+  ) {
+    final visibleTasks = taskProvider.tasks
+        .where((task) => !_hiddenCompletedTaskIds.contains(task.id))
+        .toList();
+
+    visibleTasks.sort((a, b) {
+      if (a.priorityIndex == b.priorityIndex) return 0;
+      return a.priorityIndex.compareTo(b.priorityIndex);
+    }); // Sort tasks: incomplete first, completed last
+    visibleTasks.sort((a, b) {
+      if (a.isCompleted == b.isCompleted) return 0;
+      return a.isCompleted ? 1 : -1; // incomplete (false) comes first
+    });
+
+    return visibleTasks;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundPrimary,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // const SizedBox(height: AppSpacing.xl),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        StreakWidget(
-                          currentStreak: streakTracker.currentStreak,
-                        ).slideDownStandard(
-                            delay: AnimationConstants.mediumDelay),
-                        Spacer(),
-                        Row(
-                          children: [
-                            HomeAppBarButton(
-                              onPressed: () {
-                                showProfileModal(context);
-                              },
-                              icon: CupertinoIcons.settings,
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            HomeAppBarButton(
-                              onPressed: () {
-                                RouteUtils.pushNamed(
-                                  context,
-                                  RoutePaths.tasksListPage,
-                                );
-                              },
-                              icon: CupertinoIcons.list_dash,
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            HomeAppBarButton(
-                              onPressed: () {
-                                RouteUtils.pushNamed(
-                                  context,
-                                  RoutePaths.addTaskPage,
-                                  arguments: {
-                                    'fromHomePage': true,
-                                  },
-                                );
-                              },
-                              icon: CupertinoIcons.add,
-                            ),
-                          ],
-                        ).slideUpStandard(
-                            delay: AnimationConstants.mediumDelay),
-                      ],
-                    ),
+    return Consumer<TaskProvider>(
+      builder: (context, taskProvider, child) {
+        final tasks = getTasks(taskProvider);
 
-                    const SizedBox(height: AppSpacing.md),
-                    // Welcome header
-                    Column(
+        return Scaffold(
+          backgroundColor: AppColors.backgroundPrimary,
+          body: SafeArea(
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: SingleChildScrollView(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Let's get to work,",
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            color: AppColors.textSecondary,
+                        homeAppBar(context),
+
+                        const SizedBox(height: AppSpacing.sm),
+                        // Welcome header
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Let's get to work,",
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ).slideDownStandard(),
+                            Text(
+                              _userName,
+                              style: AppTextStyles.h1.copyWith(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ).slideDownStandard(
+                                delay: AnimationConstants.mediumDelay),
+                          ],
+                        ),
+
+                        const SizedBox(height: AppSpacing.md),
+
+                        // 3D Circular Progress Indicator
+                        Center(
+                          child: CircularProgressIndicator3D(
+                            totalTasks: taskProvider.totalTasks,
+                            completedTasks: taskProvider.completedTasksCount,
+                            size: () {
+                              if (AppSize(context).height < 600) {
+                                return AppSize(context).height * 0.28;
+                              } else if (AppSize(context).height < 700) {
+                                return AppSize(context).height * 0.28;
+                              } else if (AppSize(context).height < 800) {
+                                return AppSize(context).height * 0.28;
+                              }
+                              return AppSize(context).height * 0.30;
+                            }(),
                           ),
-                        ).slideDownStandard(),
-                        Text(
-                          _userName,
-                          style: AppTextStyles.h1.copyWith(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
+                        ).scaleInStandard(
+                          delay: AnimationConstants.longDelay,
+                          scale: AnimationConstants.largeScale,
+                        ),
+
+                        // Spacer(),
+                        Container(
+                          margin: EdgeInsets.only(
+                            top: AppSpacing.xxl,
                           ),
-                        ).slideDownStandard(
-                            delay: AnimationConstants.mediumDelay),
+                          alignment: Alignment.bottomCenter,
+                          child: tasks.isNotEmpty &&
+                                  tasks.any((task) => !task.isCompleted)
+                              ? CardsSwiperWidget(
+                                  cardData: tasks,
+                                  onCardCollectionAnimationComplete: (_) {},
+                                  onCardChange: (index) {
+                                    _onTaskSwipedUp(index);
+                                  },
+                                  cardBuilder: (context, index, visibleIndex) {
+                                    var task = tasks[index];
+                                    return StackCard(context, task, index);
+                                  },
+                                )
+                              : emptyTaskCard(tasks.isEmpty),
+                        ).slideUpStandard(
+                          delay: AnimationConstants.mediumDelay,
+                        ),
+
+                        // Bottom spacing
                       ],
                     ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    // 3D Circular Progress Indicator
-                    Center(
-                      child: CircularProgressIndicator3D(
-                        totalTasks: tasks.length,
-                        completedTasks: tasks.fold<int>(
-                            0,
-                            (previousValue, value) =>
-                                previousValue + (value.isCompleted ? 1 : 0)),
-                        size: () {
-                          if (AppSize(context).height < 600) {
-                            return AppSize(context).height * 0.28;
-                          } else if (AppSize(context).height < 700) {
-                            return AppSize(context).height * 0.28;
-                          } else if (AppSize(context).height < 800) {
-                            return AppSize(context).height * 0.28;
-                          }
-                          return AppSize(context).height * 0.30;
-                        }(),
-                        onTap: () {
-                          Navigator.of(context).pushNamed(
-                            RoutePaths.progressAnalyticsPage,
-                            arguments: {
-                              'tasks': tasks,
-                            },
-                          );
-                        },
-                      ),
-                    ).scaleInStandard(
-                      delay: AnimationConstants.longDelay,
-                      scale: AnimationConstants.largeScale,
-                    ),
-
-                    // Spacer(),
-                    SizedBox(height: AppSpacing.xl),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: tasks.isNotEmpty &&
-                              tasks.any((e) => !e.isCompleted)
-                          ? CardsSwiperWidget(
-                              cardData: tasks,
-                              onCardCollectionAnimationComplete: (_) {},
-                              onCardChange: (index) {},
-                              cardBuilder: (context, index, visibleIndex) {
-                                var task = tasks[index];
-                                return GestureDetector(
-                                  onTap: () {
-                                    // Navigator.of(context).push(
-                                    //   MaterialPageRoute(
-                                    //     builder: (context) {
-                                    //       return TaskDetailsPage(
-                                    //           heroTag: 'card_$index');
-                                    //     },
-                                    //   ),
-                                    // );
-                                    // Navigator.of(context)
-                                    //     .push(HeroDialogRoute(builder: (context) {
-                                    //   return TaskDetailsPage(
-                                    //     heroTag: 'card_$index',
-                                    //   );
-                                    // }));
-                                  },
-                                  child: StackCard(context, task, index),
-                                );
-                              },
-                            )
-                          : Container(
-                              alignment: Alignment.center,
-                              // decoration: BoxDecoration(
-                              //   borderRadius:
-                              //       BorderRadius.circular(AppBorderRadius.xxl),
-                              //   color: AppColors.backgroundTertiary,
-                              //   border: Border.all(
-                              //     color: AppColors.textMuted,
-                              //     width: 0.5,
-                              //   ),
-                              // ),
-                              // width: 600,
-                              // height: 280,
-                              // padding: const EdgeInsets.all(AppSpacing.xl),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    tasks.isEmpty
-                                        ? 'Please add some task'
-                                        : 'All Tasks are complete!',
-                                    maxLines: 2,
-                                    textAlign: TextAlign.center,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTextStyles.h2.copyWith(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 32,
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    height: AppSpacing.xs,
-                                  ),
-                                  Text(
-                                    'Click on button at top right to add some tasks!',
-                                    maxLines: 2,
-                                    textAlign: TextAlign.center,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                    ).slideUpStandard(delay: AnimationConstants.mediumDelay),
-
-                    // Bottom spacing
-                  ],
+                  ),
                 ),
-              ),
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: ConfettiWidget(
+                    confettiController: _confettiController,
+                    blastDirectionality: BlastDirectionality.explosive,
+                    blastDirection: pi * 0.5, maxBlastForce: 10,
+                    numberOfParticles: 50,
+                    colors: const [
+                      AppColors.accentPurple,
+                      AppColors.accentBlue,
+                      AppColors.accentGreen,
+                      AppColors.accentYellow,
+                      AppColors.accentPink,
+                      AppColors.accentOrange,
+                    ], // manually specify the colors to be used
+                  ),
+                ),
+              ],
             ),
-            Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                confettiController: _confettiController,
-                blastDirectionality: BlastDirectionality.explosive,
-                blastDirection: pi * 0.5, maxBlastForce: 10,
-                numberOfParticles: 50,
-                colors: const [
-                  AppColors.accentPurple,
-                  AppColors.accentBlue,
-                  AppColors.accentGreen,
-                  AppColors.accentYellow,
-                  AppColors.accentPink,
-                  AppColors.accentOrange,
-                ], // manually specify the colors to be used
-              ),
+          ),
+        );
+      },
+    );
+  }
+
+  Container emptyTaskCard(bool isEmpty) {
+    return Container(
+      alignment: Alignment.center,
+      padding: EdgeInsets.symmetric(
+        horizontal: 12,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            height: 80,
+            width: 100,
+            child: Lottie.asset(
+              isEmpty
+                  ? "assets/lottie/addTask2.json"
+                  : "assets/lottie/completedTask.json",
+              fit: BoxFit.cover,
             ),
-          ],
-        ),
+          ),
+          Text(
+            isEmpty ? 'Have any tasks?' : 'See, you did it!',
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.h1.copyWith(
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(
+            height: AppSpacing.xs,
+          ),
+          Text(
+            isEmpty
+                ? 'Click on button at top right to add some tasks!'
+                : 'You have completed all your tasks for the day!',
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 18,
+            ),
+          ),
+        ],
       ),
     );
   }
 
+  Row homeAppBar(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Consumer<StreakProvider>(
+          builder: (context, streakProvider, child) {
+            return StreakWidget(
+              currentStreak: streakProvider.currentStreak,
+            ).slideDownStandard(
+              delay: AnimationConstants.mediumDelay,
+            );
+          },
+        ),
+        Spacer(),
+        Row(
+          children: [
+            HomeAppBarButton(
+              onPressed: () {
+                showProfileModal(context);
+              },
+              icon: CupertinoIcons.settings,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            HomeAppBarButton(
+              onPressed: () {
+                RouteUtils.pushNamed(
+                  context,
+                  RoutePaths.tasksListPage,
+                );
+              },
+              icon: CupertinoIcons.list_dash,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            HomeAppBarButton(
+              onPressed: () {
+                RouteUtils.pushNamed(
+                  context,
+                  RoutePaths.addTaskPage,
+                  arguments: {
+                    'fromHomePage': true,
+                  },
+                );
+              },
+              icon: CupertinoIcons.add,
+            ),
+          ],
+        ).slideUpStandard(
+          delay: AnimationConstants.mediumDelay,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _onTaskCompletion(
+    bool? value,
+    Task task,
+  ) async {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    if (value ?? false) {
+      await taskProvider.markTaskAsCompleted(task);
+    } else {
+      await taskProvider.markTaskAsIncomplete(task);
+    }
+    HapticFeedback.mediumImpact();
+
+    // If task is being completed, trigger completion effects
+    if (value ?? false) {
+      // Play completion effects (confetti, sound, etc.)
+      _confettiController.play();
+      final audioPlayer = AudioPlayer();
+      await audioPlayer.setAsset('assets/sounds/complete.mp3');
+      await audioPlayer.play().then((_) async {
+        await audioPlayer.dispose();
+      });
+
+      // Check for streak overlay after completion
+      if (mounted) {
+        _checkForStreakOverlay();
+      }
+    }
+
+    await _updateStreakData();
+  }
+
   // ignore: non_constant_identifier_names
-  GestureDetector StackCard(BuildContext context, Task task, int index) {
+  Widget StackCard(BuildContext context, Task task, int index) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -333,7 +407,7 @@ class _HomePageState extends State<HomePage> {
           RoutePaths.taskDetailsPage,
           arguments: {
             'heroTag': 'task_${task.id}',
-            'task': task,
+            'taskID': task.id,
           },
         );
       },
@@ -387,30 +461,7 @@ class _HomePageState extends State<HomePage> {
                       width: 2,
                     ),
                     activeColor: AppColors.accentGreen,
-                    onChanged: (bool? value) async {
-                      setState(() {
-                        tasks[index] =
-                            task.copyWith(isCompleted: value ?? false);
-                      });
-                      if (tasks.every((e) => e.isCompleted)) {
-                        if (context.mounted) {
-                          showStreakOverlay(
-                            context,
-                            streakTracker.currentStreak + 1,
-                          );
-                        }
-                      }
-                      if (value ?? false) {
-                        _confettiController.play();
-                        final audioPlayer = AudioPlayer();
-                        await audioPlayer
-                            .setAsset('assets/sounds/complete.mp3');
-                        await audioPlayer.play().then((_) async {
-                          await audioPlayer.dispose();
-                        });
-                      }
-                      await _updateStreakData();
-                    },
+                    onChanged: (bool? value) => _onTaskCompletion(value, task),
                   ),
                 ),
                 if (task.isCompleted)

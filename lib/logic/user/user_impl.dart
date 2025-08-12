@@ -132,7 +132,7 @@ class UserManager implements IUserManagerContract {
       final user = UserModel(
         id: UuidV4().toString(),
         username: username,
-        createdAt: DateTime.now(),
+        createdAt: DateTime.now().toIso8601String(),
       );
       await saveUser(user);
       AppLogger.info('User created from username: $username');

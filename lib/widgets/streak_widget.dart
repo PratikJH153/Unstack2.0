@@ -41,7 +41,7 @@ class _StreakWidgetState extends State<StreakWidget> {
             borderRadius: BorderRadius.circular(AppBorderRadius.full),
             border: Border.all(
               color: isStreak ? AppColors.accentOrange : AppColors.textMuted,
-              width: 0.5,
+              width: 1,
             ),
             boxShadow: isStreak
                 ? [

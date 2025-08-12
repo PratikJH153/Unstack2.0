@@ -2,19 +2,22 @@ import 'package:chiclet/chiclet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:unstack/models/tasks/task.model.dart';
+import 'package:unstack/providers/task_provider.dart';
 import 'package:unstack/theme/theme.dart';
 import 'package:unstack/routes/route.dart';
+import 'package:unstack/widgets/delete_task_dialog.dart';
 import 'package:unstack/widgets/home_app_bar_button.dart';
 import 'dart:math' as math;
 
 class TaskDetailsPage extends StatefulWidget {
   final String heroTag;
-  final Task? task;
+  final String taskID;
 
   const TaskDetailsPage({
     required this.heroTag,
-    this.task,
+    required this.taskID,
     super.key,
   });
 
@@ -44,14 +47,6 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
   @override
   void initState() {
     super.initState();
-    _currentTask = widget.task ??
-        Task(
-          id: 'temp',
-          title: 'New Task',
-          description: '',
-          priority: TaskPriority.medium,
-          createdAt: DateTime.now(),
-        );
 
     _initializeAnimations();
   }
@@ -170,9 +165,12 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
     _burstController.forward();
   }
 
-  void _finishCompletion() {
+  Future<void> _finishCompletion() async {
     // Mark task as completed
     final completedTask = _currentTask.copyWith(isCompleted: true);
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+
+    await taskProvider.updateTask(completedTask);
 
     setState(() {
       _currentTask = completedTask;
@@ -206,179 +204,170 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
     }
   }
 
-  void _deleteTask() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xxl),
-        ),
-        backgroundColor: AppColors.surfaceCard,
-        title: Text(
-          'Delete Task',
-          style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
-        ),
-        content: Text(
-          'Are you sure you want to delete this task?',
-          style:
-              AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop(); // Go back to tasks list
-              HapticFeedback.heavyImpact();
-            },
-            child: Text(
-              'Delete',
-              style: TextStyle(color: AppColors.statusError),
-            ),
-          ),
-        ],
-      ),
-    );
+  void _deleteTask() async {
+    final result = await showDeleteDialog(
+          context: context,
+          onDelete: () async {
+            // Delete task using TaskProvider
+            final taskProvider =
+                Provider.of<TaskProvider>(context, listen: false);
+            await taskProvider.deleteTask(_currentTask.id);
+
+            // Go back to tasks list
+            HapticFeedback.heavyImpact();
+            if (mounted) {
+              Navigator.of(context).pop(true);
+              return Navigator.of(context).pop(true);
+            }
+          },
+          title: 'Delete Task',
+          description: 'Are you sure want to delete this task?',
+          buttonTitle: 'Delete',
+        ) ??
+        false;
+    if (result) {}
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      body: Stack(
-        children: [
-          SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: EdgeInsets.all(AppSpacing.lg),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildHeader(),
-                          SizedBox(height: AppSpacing.xl),
-                          _buildTaskInfo(),
-                          SizedBox(height: AppSpacing.xxxl),
-                        ],
+      body: Consumer<TaskProvider>(
+        builder: (context, taskProvider, state) {
+          _currentTask =
+              taskProvider.getTaskById(widget.taskID) ?? _currentTask;
+          return Stack(
+            children: [
+              SafeArea(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.all(AppSpacing.lg),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildHeader(),
+                              SizedBox(height: AppSpacing.xl),
+                              _buildTaskInfo(),
+                              SizedBox(height: AppSpacing.xxxl),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.lg,
-                  ),
-                  child: ChicletOutlinedAnimatedButton(
-                    height: 70,
-                    width: double.infinity,
-                    onPressed: () {
-                      HapticFeedback.mediumImpact();
-                    },
-                    backgroundColor: AppColors.whiteColor,
-                    borderColor: AppColors.textMuted,
-                    borderWidth: 2,
-                    buttonType: ChicletButtonTypes.roundedRectangle,
-                    foregroundColor: AppColors.accentPurple,
-                    borderRadius: AppBorderRadius.xxl,
-                    child: GestureDetector(
-                      onTapDown: (_) => _startHoldProgress(),
-                      onTapUp: (_) => _cancelHoldProgress(),
-                      onTapCancel: () => _cancelHoldProgress(),
-                      child: Stack(
-                        children: [
-                          // Linear progress indicator
-                          AnimatedBuilder(
-                            animation: _holdProgressAnimation,
-                            builder: (context, child) {
-                              return Container(
-                                width: double.infinity,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.full),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.full),
-                                  child: Stack(
-                                    children: [
-                                      // Progress fill
-                                      Positioned(
-                                        left: 0,
-                                        top: 0,
-                                        bottom: 0,
-                                        width:
-                                            MediaQuery.of(context).size.width *
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.lg,
+                      ),
+                      child: ChicletOutlinedAnimatedButton(
+                        height: 70,
+                        width: double.infinity,
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                        },
+                        backgroundColor: AppColors.whiteColor,
+                        borderColor: AppColors.textMuted,
+                        borderWidth: 2,
+                        buttonType: ChicletButtonTypes.roundedRectangle,
+                        foregroundColor: AppColors.accentPurple,
+                        borderRadius: AppBorderRadius.xxl,
+                        child: GestureDetector(
+                          onTapDown: (_) => _startHoldProgress(),
+                          onTapUp: (_) => _cancelHoldProgress(),
+                          onTapCancel: () => _cancelHoldProgress(),
+                          child: Stack(
+                            children: [
+                              // Linear progress indicator
+                              AnimatedBuilder(
+                                animation: _holdProgressAnimation,
+                                builder: (context, child) {
+                                  return Container(
+                                    width: double.infinity,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                          AppBorderRadius.full),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                          AppBorderRadius.full),
+                                      child: Stack(
+                                        children: [
+                                          // Progress fill
+                                          Positioned(
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
                                                 _holdProgressAnimation.value,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              begin: Alignment.topCenter,
-                                              end: Alignment.bottomCenter,
-                                              colors: [
-                                                const Color(0xFF4A90E2)
-                                                    .withValues(alpha: 0.2),
-                                                const Color(0xFF4A90E2)
-                                                    .withValues(alpha: 0.15),
-                                                const Color(0xFF4A90E2)
-                                                    .withValues(alpha: 0.1),
-                                              ],
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: [
+                                                    const Color(0xFF4A90E2)
+                                                        .withValues(alpha: 0.2),
+                                                    const Color(0xFF4A90E2)
+                                                        .withValues(
+                                                            alpha: 0.15),
+                                                    const Color(0xFF4A90E2)
+                                                        .withValues(alpha: 0.1),
+                                                  ],
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              // Button content
+                              Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      size: 24,
+                                    ),
+                                    SizedBox(width: AppSpacing.sm),
+                                    Text(
+                                      _isHolding
+                                          ? 'Hold to Complete...'
+                                          : 'Press & Hold to Finish',
+                                      style: AppTextStyles.buttonLarge.copyWith(
+                                        color: AppColors.accentPurple,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
+                              ),
+                            ],
                           ),
-                          // Button content
-                          Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.check_circle,
-                                  size: 24,
-                                ),
-                                SizedBox(width: AppSpacing.sm),
-                                Text(
-                                  _isHolding
-                                      ? 'Hold to Complete...'
-                                      : 'Press & Hold to Finish',
-                                  style: AppTextStyles.buttonLarge.copyWith(
-                                    color: AppColors.accentPurple,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                    // if (!_currentTask.isCompleted) _buildCompletionButton(),
+                  ],
                 ),
-                // if (!_currentTask.isCompleted) _buildCompletionButton(),
-              ],
-            ),
-          ),
-          // Radial expansion overlay
-          if (_isCompleting) _buildRadialExpansionOverlay(),
-          // Burst overlay
-          if (_isCompleted) _buildBurstOverlay(),
-        ],
+              ),
+              // Radial expansion overlay
+              if (_isCompleting) _buildRadialExpansionOverlay(),
+              // Burst overlay
+              if (_isCompleted) _buildBurstOverlay(),
+            ],
+          );
+        },
       ),
     );
   }
@@ -398,7 +387,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
           color: AppColors.redShade,
         ),
         const SizedBox(
-          width: AppSpacing.sm,
+          width: AppSpacing.md,
         ),
         HomeAppBarButton(
           onPressed: _navigateToEditTask,

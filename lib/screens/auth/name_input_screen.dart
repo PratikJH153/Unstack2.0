@@ -21,26 +21,17 @@ class NameInputScreen extends StatefulWidget {
 
 class _NameInputScreenState extends State<NameInputScreen> {
   final TextEditingController _nameController = TextEditingController();
-  final FocusNode _nameFocusNode = FocusNode();
-  bool _isLoading = false;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isNameValid = false;
 
   @override
   void initState() {
     super.initState();
-    // Auto-focus the text field after a short delay
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (mounted) {
-        _nameFocusNode.requestFocus();
-      }
-    });
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _nameFocusNode.dispose();
     super.dispose();
   }
 
@@ -63,18 +54,11 @@ class _NameInputScreenState extends State<NameInputScreen> {
     if (form!.validate()) {
       final name = _nameController.text.trim();
 
-      setState(() {
-        _isLoading = true;
-      });
-
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final success = await authProvider.signInWithUsername(name);
 
         if (success) {
-          // Add a small delay for better UX
-          await Future.delayed(const Duration(milliseconds: 500));
-
           // Navigate to home page
           if (mounted) {
             RouteUtils.pushReplacementNamed(context, RoutePaths.homePage);
@@ -92,12 +76,6 @@ class _NameInputScreenState extends State<NameInputScreen> {
             ),
           );
         }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
       }
     }
   }
@@ -107,7 +85,7 @@ class _NameInputScreenState extends State<NameInputScreen> {
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: // Continue button
-          !_isLoading
+          !Provider.of<AuthProvider>(context).isLoading
               ? Container(
                   height: 80,
                   margin: EdgeInsets.symmetric(
@@ -249,6 +227,7 @@ class _NameInputScreenState extends State<NameInputScreen> {
                             controller: _nameController,
                             keyboardType: TextInputType.name,
                             onChanged: (_) {
+                              if (!mounted) return;
                               setState(() {
                                 _isNameValid =
                                     _validateName(_nameController.text) == null;

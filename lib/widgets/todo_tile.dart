@@ -85,6 +85,7 @@ class _CardsSwiperWidgetState<T> extends State<CardsSwiperWidget<T>>
   bool _hasReachedHalf = false;
   bool _isAnimationBlocked = false;
   bool _shouldPlayVibration = true;
+  bool _isResetting = false; // Prevent recursive reset calls
 
   late List<T> _cardData;
 
@@ -163,6 +164,9 @@ class _CardsSwiperWidgetState<T> extends State<CardsSwiperWidget<T>>
 
     // Listen to the animation value to switch cards at 0.5
     _controller?.addListener(() {
+      // Prevent recursive calls during reset
+      if (_isResetting) return;
+
       // Only perform switch if there are multiple cards
       if (_cardData.length > 1) {
         // Switch cards at midpoint (0.5) of the animation
@@ -190,15 +194,30 @@ class _CardsSwiperWidgetState<T> extends State<CardsSwiperWidget<T>>
           _debounceTimer = Timer(const Duration(milliseconds: 300), () {});
         }
 
-        // Reset the switch flag when animation resets
+        // Reset the switch flag when animation completes
         if ((_controller?.value ?? 0.0) == 1.0) {
           _isCardSwitched = false;
-          _controller?.reset();
           _hasReachedHalf = false;
+          // Use a delayed reset to avoid infinite recursion
+          Future.microtask(() {
+            if (!_isResetting && mounted) {
+              _isResetting = true;
+              _controller?.reset();
+              _isResetting = false;
+            }
+          });
         }
       } else {
-        // If only one card, reset the animation
-        _controller?.reset();
+        // If only one card, reset the animation safely
+        if ((_controller?.value ?? 0.0) > 0.0) {
+          Future.microtask(() {
+            if (!_isResetting && mounted) {
+              _isResetting = true;
+              _controller?.reset();
+              _isResetting = false;
+            }
+          });
+        }
       }
     });
 
