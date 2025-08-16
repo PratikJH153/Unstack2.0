@@ -96,11 +96,6 @@ class _StreakPageState extends State<StreakPage> {
                                           streakProvider.currentStreak,
                                       longestStreak:
                                           streakProvider.longestStreak,
-                                      totalCompletedDays:
-                                          streakProvider.totalCompletedDays,
-                                      monthCompletionPercentage: streakProvider
-                                          .getMonthCompletionPercentage(
-                                              _selectedMonth),
                                     ).slideUpStandard(
                                         delay: AnimationConstants.noDelay);
                                   },

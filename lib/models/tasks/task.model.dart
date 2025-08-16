@@ -42,8 +42,7 @@ enum TaskPriority {
 
 enum TaskSortOption {
   dateCreated,
-  priority,
-  alphabetical;
+  priority;
 
   String get label {
     switch (this) {
@@ -51,8 +50,6 @@ enum TaskSortOption {
         return 'Time Created';
       case TaskSortOption.priority:
         return 'Priority';
-      case TaskSortOption.alphabetical:
-        return 'Alphabetical';
     }
   }
 }
@@ -63,6 +60,7 @@ class Task {
   final String description;
   final TaskPriority priority;
   final DateTime createdAt;
+  final DateTime? completedAt;
   final bool isCompleted;
   final int priorityIndex;
 
@@ -72,6 +70,7 @@ class Task {
     required this.description,
     required this.priority,
     required this.createdAt,
+    this.completedAt,
     required this.priorityIndex,
     this.isCompleted = false,
   });
@@ -82,6 +81,7 @@ class Task {
     String? description,
     TaskPriority? priority,
     DateTime? createdAt,
+    DateTime? completedAt,
     int? priorityIndex,
     bool? isCompleted,
   }) {
@@ -91,6 +91,7 @@ class Task {
       description: description ?? this.description,
       priority: priority ?? this.priority,
       createdAt: createdAt ?? this.createdAt,
+      completedAt: completedAt ?? this.completedAt,
       priorityIndex: priorityIndex ?? this.priorityIndex,
       isCompleted: isCompleted ?? this.isCompleted,
     );
@@ -104,6 +105,9 @@ class Task {
       (e) => e.toString() == 'TaskPriority.${json['priority']}',
     );
     final createdAt = DateTime.parse(json['createdAt']);
+    final completedAt = json['completedAt'] != "null"
+        ? DateTime.parse(json['completedAt'])
+        : null;
     final isCompleted = json['isCompleted'] == 1 ? true : false;
     final priorityIndex = json['priorityIndex'] ?? 0;
 
@@ -113,6 +117,7 @@ class Task {
       description: description,
       priority: priority,
       createdAt: createdAt,
+      completedAt: completedAt,
       priorityIndex: priorityIndex,
       isCompleted: isCompleted,
     );
@@ -125,6 +130,8 @@ class Task {
       'description': description,
       'priority': priority.name,
       'createdAt': createdAt.toIso8601String(),
+      'completedAt':
+          completedAt != null ? completedAt!.toIso8601String() : "null",
       'priorityIndex': priorityIndex,
       'isCompleted': isCompleted ? 1 : 0,
     };

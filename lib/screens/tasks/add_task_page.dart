@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:unstack/models/tasks/task.model.dart';
-
+import 'package:unstack/providers/streak_provider.dart';
 import 'package:unstack/providers/task_provider.dart';
 import 'package:unstack/routes/route.dart';
 import 'package:unstack/utils/app_logger.dart';
@@ -43,6 +43,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
       _descriptionController.text = routeData["task"].description;
       _selectedPriority = routeData["task"].priority;
       isEdit = true;
+      isValid = true;
     }
     super.initState();
   }
@@ -75,8 +76,9 @@ class _AddTaskPageState extends State<AddTaskPage> {
           );
 
           final success = await taskProvider.updateTask(updatedTask);
-          if (success) {
+          if (success && mounted) {
             AppLogger.info('Task updated successfully: ${updatedTask.title}');
+            // Streak update is now handled automatically in TaskProvider
           } else {
             AppLogger.error('Failed to update task');
             // Show error message to user
@@ -96,14 +98,22 @@ class _AddTaskPageState extends State<AddTaskPage> {
           description: _descriptionController.text.trim(),
           priority: _selectedPriority,
           createdAt: _selectedDateTime,
+          completedAt: null,
           priorityIndex: priorityIndex[_selectedPriority.name] ?? 0,
           isCompleted: false,
         );
 
         final success = await taskProvider.addTask(newTask);
 
-        if (success) {
+        if (success && mounted) {
           AppLogger.info('Task created successfully: ${newTask.title}');
+          final StreakProvider streakProvider =
+              Provider.of<StreakProvider>(context, listen: false);
+          streakProvider.updateStreak(
+            taskProvider.totalTasksCount,
+            taskProvider.completedTasksCount,
+            taskProvider.todaysTasksCompleted,
+          );
         } else {
           AppLogger.error('Failed to create task');
           // Show error message to user

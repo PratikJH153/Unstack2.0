@@ -6,7 +6,8 @@ final List<Task> initalTasks = [
     title: 'Complete this task and swipe up',
     description: 'Check the box above to finish and move to the next step.',
     priority: TaskPriority.urgent,
-    createdAt: DateTime.now(),
+    createdAt: DateTime.now().subtract(Duration(days: 1)),
+    completedAt: null,
     priorityIndex: priorityIndex[TaskPriority.urgent.name] ?? 0,
   ),
   Task(
@@ -15,6 +16,7 @@ final List<Task> initalTasks = [
     description: 'Tap the + icon above to start planning your work.',
     priority: TaskPriority.medium,
     createdAt: DateTime.now().subtract(Duration(days: 2)),
+    completedAt: null,
     priorityIndex: priorityIndex[TaskPriority.medium.name] ?? 0,
   ),
 ];

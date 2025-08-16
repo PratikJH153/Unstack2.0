@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:unstack/logic/tasks/task_impl.dart';
-import 'package:unstack/logic/streak/streak_impl.dart';
+
 import 'package:unstack/models/tasks/task.model.dart';
 import 'package:unstack/providers/task_provider_contract.dart';
 import 'package:unstack/utils/app_logger.dart';
@@ -14,55 +14,57 @@ enum TaskState {
 
 class TaskProvider extends ChangeNotifier implements ITaskProviderContract {
   final TaskManager _taskManager = TaskManager();
-  final StreakManager _streakManager = StreakManager();
 
-  TaskState _taskState = TaskState.initial;
-  List<Task> _tasks = [];
+  List<Task> _remainingTasks = [];
   List<Task> _completedTasks = [];
-  String? _errorMessage;
-
-  // Getters
-  TaskState get taskState => _taskState;
+  List<Task> _pendingTasks = [];
 
   @override
-  List<Task> get tasks => _tasks;
+  List<Task> get remainingTasks => _remainingTasks;
+  @override
+  List<Task> get pendingTasks => _pendingTasks;
+  @override
+  List<Task> get allTasks =>
+      [...remainingTasks, ...completedTasks, ...pendingTasks];
 
+  List<Task> get todayTasks => [...remainingTasks, ...completedTasks];
   @override
   List<Task> get completedTasks => _completedTasks;
 
-  String? get errorMessage => _errorMessage;
-
-  bool get isLoading => _taskState == TaskState.loading;
-  bool get hasError => _taskState == TaskState.error;
-
   // Statistics
-  int get totalTasks => _tasks.length;
+  int get totalTasksCount => [...remainingTasks, ...completedTasks].length;
   int get completedTasksCount => completedTasks.length;
-  double get completionPercentage =>
-      totalTasks > 0 ? (completedTasksCount / totalTasks) * 100 : 0.0;
+
+  bool get todaysTasksCompleted =>
+      todayTasks.isNotEmpty && todayTasks.every((task) => task.isCompleted);
 
   TaskProvider() {
     loadTasks();
     loadCompletedTasks();
+    loadPendingTasks();
   }
 
   /// Get task by id
   @override
   Task? getTaskById(String taskId) {
-    return _tasks.firstWhere(
-      (task) => task.id == taskId,
-    );
+    try {
+      return allTasks.firstWhere(
+        (task) => task.id == taskId,
+      );
+    } catch (e) {
+      AppLogger.warning('Task not found with id: $taskId');
+      return null;
+    }
   }
 
   /// Load all tasks from database
   @override
   Future<void> loadTasks() async {
-    _setTaskState(TaskState.loading);
-
     try {
-      final tasks = await _taskManager.getTasks();
-      _tasks = tasks;
-      _setTaskState(TaskState.loaded);
+      final tasks = await _taskManager.getRemainingTasks();
+      // Tasks are already ordered by priorityIndex from database query
+      _remainingTasks = tasks;
+      notifyListeners();
       AppLogger.info('Loaded ${tasks.length} tasks');
     } catch (e) {
       AppLogger.error('Error loading tasks: $e');
@@ -73,16 +75,28 @@ class TaskProvider extends ChangeNotifier implements ITaskProviderContract {
   /// Load completed tasks from database
   @override
   Future<void> loadCompletedTasks() async {
-    _setTaskState(TaskState.loading);
-
     try {
       final completedTasks = await _taskManager.getCompletedTasks();
       _completedTasks = completedTasks;
-      _setTaskState(TaskState.loaded);
+      notifyListeners();
       AppLogger.info('Loaded ${completedTasks.length} completed tasks');
     } catch (e) {
       AppLogger.error('Error loading completed tasks: $e');
       _setError('Failed to load completed tasks: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> loadPendingTasks() async {
+    try {
+      final pendingTasks = await _taskManager.getPendingTasks();
+      // Tasks are already ordered by priorityIndex from database query
+      _pendingTasks = pendingTasks;
+      notifyListeners();
+      AppLogger.info('Loaded ${pendingTasks.length} pending tasks');
+    } catch (e) {
+      AppLogger.error('Error loading pending tasks: $e');
+      _setError('Failed to load pending tasks: ${e.toString()}');
     }
   }
 
@@ -91,12 +105,9 @@ class TaskProvider extends ChangeNotifier implements ITaskProviderContract {
   Future<bool> addTask(Task task) async {
     try {
       await _taskManager.addTask(task);
-      _tasks.add(task);
+      remainingTasks.add(task);
       notifyListeners();
 
-      _streakManager.removeStreakForDate(task.createdAt);
-
-      AppLogger.info('Added task: ${task.title}');
       return true;
     } catch (e) {
       AppLogger.error('Error adding task: $e');
@@ -110,12 +121,34 @@ class TaskProvider extends ChangeNotifier implements ITaskProviderContract {
   Future<bool> updateTask(Task updatedTask) async {
     try {
       await _taskManager.updateTask(updatedTask);
+      bool taskFound = false;
+      // Check in today's tasks
+      final todayIndex =
+          _remainingTasks.indexWhere((task) => task.id == updatedTask.id);
+      if (todayIndex != -1) {
+        _remainingTasks[todayIndex] = updatedTask;
+        taskFound = true;
+      }
 
-      final index = _tasks.indexWhere((task) => task.id == updatedTask.id);
-      if (index != -1) {
-        _tasks[index] = updatedTask;
-        notifyListeners();
+      // Check in pending tasks
+      final pendingIndex =
+          _pendingTasks.indexWhere((task) => task.id == updatedTask.id);
+      if (pendingIndex != -1) {
+        _pendingTasks[pendingIndex] = updatedTask;
+        taskFound = true;
+      }
 
+      // Check in completed tasks
+      final completedIndex =
+          _completedTasks.indexWhere((task) => task.id == updatedTask.id);
+      if (completedIndex != -1) {
+        _completedTasks[completedIndex] = updatedTask;
+        taskFound = true;
+      }
+
+      refreshTasks();
+
+      if (taskFound) {
         AppLogger.info('Updated task: ${updatedTask.title}');
         return true;
       } else {
@@ -129,13 +162,37 @@ class TaskProvider extends ChangeNotifier implements ITaskProviderContract {
     }
   }
 
+  @override
+  Future<bool> postponeTask(Task task) async {
+    try {
+      final postponedTask = task.copyWith(createdAt: DateTime.now());
+      await _taskManager.updateTask(postponedTask);
+
+      // Remove from pending tasks list
+      _pendingTasks.removeWhere((t) => t.id == task.id);
+
+      // Add the updated task (with new createdAt) to today's tasks
+      _remainingTasks.add(postponedTask);
+
+      notifyListeners();
+
+      AppLogger.info('Postponed task: ${task.title} to today');
+      return true;
+    } catch (e) {
+      AppLogger.error('Error postponing task: $e');
+      _setError('Failed to postpone task: ${e.toString()}');
+      return false;
+    }
+  }
+
   /// Delete a task
   @override
   Future<bool> deleteTask(String taskId) async {
     try {
       await _taskManager.deleteTask(taskId);
-      _tasks.removeWhere((task) => task.id == taskId);
+      _remainingTasks.removeWhere((task) => task.id == taskId);
       _completedTasks.removeWhere((task) => task.id == taskId);
+      _pendingTasks.removeWhere((task) => task.id == taskId);
 
       notifyListeners();
 
@@ -152,11 +209,18 @@ class TaskProvider extends ChangeNotifier implements ITaskProviderContract {
   @override
   Future<bool> markTaskAsCompleted(Task task) async {
     try {
-      final completedTask = task.copyWith(isCompleted: true);
+      final completedTask =
+          task.copyWith(isCompleted: true, completedAt: DateTime.now());
       await _taskManager.markTaskAsCompleted(completedTask);
-      _tasks.removeWhere((t) => t.id == task.id);
+      _remainingTasks.removeWhere((t) => t.id == task.id);
+      _pendingTasks.removeWhere((t) => t.id == task.id);
       _completedTasks.add(completedTask);
       notifyListeners();
+
+      AppLogger.info(
+          'Task completed: ${task.title}, created on: ${task.createdAt.toIso8601String().split('T')[0]}');
+      AppLogger.info('Today\'s tasks completed: $todaysTasksCompleted');
+
       return true;
     } catch (e) {
       AppLogger.error('Error marking task as completed: $e');
@@ -169,26 +233,23 @@ class TaskProvider extends ChangeNotifier implements ITaskProviderContract {
   @override
   Future<bool> markTaskAsIncomplete(Task task) async {
     try {
-      final incompleteTask = task.copyWith(isCompleted: false);
+      final incompleteTask =
+          task.copyWith(isCompleted: false, completedAt: null);
       await _taskManager.markTaskAsIncomplete(incompleteTask);
       _completedTasks.removeWhere((t) => t.id == task.id);
-      _tasks.add(incompleteTask);
+
+      if (task.isDueToday) {
+        _remainingTasks.add(incompleteTask);
+      } else {
+        _pendingTasks.add(incompleteTask);
+      }
       notifyListeners();
+
       return true;
     } catch (e) {
-      AppLogger.error('Error marking task as completed: $e');
-      _setError('Failed to mark task as completed: ${e.toString()}');
+      AppLogger.error('Error marking task as incomplete: $e');
+      _setError('Failed to mark task as incomplete: ${e.toString()}');
       return false;
-    }
-  }
-
-  /// Toggle task completion status
-  @override
-  Future<bool> toggleTaskCompletion(Task task) async {
-    if (task.isCompleted) {
-      return await markTaskAsIncomplete(task);
-    } else {
-      return await markTaskAsCompleted(task);
     }
   }
 
@@ -197,7 +258,9 @@ class TaskProvider extends ChangeNotifier implements ITaskProviderContract {
   Future<bool> deleteAllTasks() async {
     try {
       await _taskManager.deleteAllTasks();
-      _tasks.clear();
+      _remainingTasks.clear();
+      _completedTasks.clear();
+      _pendingTasks.clear();
       notifyListeners();
       AppLogger.info('Deleted all tasks');
       return true;
@@ -208,56 +271,71 @@ class TaskProvider extends ChangeNotifier implements ITaskProviderContract {
     }
   }
 
-  /// Clear error state
-  void clearError() {
-    _errorMessage = null;
-    if (_taskState == TaskState.error) {
-      _setTaskState(TaskState.loaded);
-    }
-  }
-
   /// Refresh tasks from database
   @override
   Future<void> refreshTasks() async {
     await loadTasks();
   }
 
-  // Helper methods
-  void _setTaskState(TaskState state) {
-    _taskState = state;
-    notifyListeners();
-  }
-
   void _setError(String message) {
-    _errorMessage = message;
-    _taskState = TaskState.error;
     notifyListeners();
   }
 
-  /// Update streak data for a specific date based on tasks for that date
+  /// Reorder tasks with optimized database operations
+  Future<void> reorderTasks(int oldIndex, int newIndex) async {
+    // Fix the index issue when dragging from lower to higher index
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
 
-  // Future<void> _updateStreakForTaskDate(DateTime date) async {
-  //   try {
-  //     // Get all tasks for the specific date
-  //     final tasksForDate = _tasks.where((task) {
-  //       final taskDate = DateTime(
-  //         task.createdAt.year,
-  //         task.createdAt.month,
-  //         task.createdAt.day,
-  //       );
-  //       final targetDate = DateTime(date.year, date.month, date.day);
-  //       return taskDate.isAtSameMomentAs(targetDate);
-  //     }).toList();
+    final tasks = List<Task>.from(_remainingTasks);
+    final task = tasks.removeAt(oldIndex);
+    tasks.insert(newIndex, task);
 
-  //     // Update streak data for this date
-  //     await _streakManager.updateDayCompletion(date, tasksForDate);
+    // Update priorityIndex for all tasks based on new positions
+    final updatedTasks = <Task>[];
+    for (int i = 0; i < tasks.length; i++) {
+      updatedTasks.add(tasks[i].copyWith(priorityIndex: i));
+    }
 
-  //     AppLogger.info(
-  //         'Updated streak for date: ${date.toIso8601String().split('T')[0]} '
-  //         'with ${tasksForDate.length} tasks');
-  //   } catch (e) {
-  //     AppLogger.error('Error updating streak for date: $e');
-  //     // Don't rethrow to avoid breaking task operations
-  //   }
-  // }
+    // Update local state immediately for smooth UI
+    _remainingTasks = updatedTasks;
+    notifyListeners();
+
+    // Batch database updates asynchronously
+    _batchUpdateTasks(updatedTasks);
+  }
+
+  /// Apply sort order with optimized database operations
+  Future<void> applySortOrder(List<Task> sortedTasks) async {
+    // Update priorityIndex values based on new sort order
+    final updatedTasks = <Task>[];
+    for (int i = 0; i < sortedTasks.length; i++) {
+      updatedTasks.add(sortedTasks[i].copyWith(priorityIndex: i));
+    }
+
+    // Update local state immediately
+    _remainingTasks = updatedTasks;
+    notifyListeners();
+
+    // Batch database updates asynchronously
+    _batchUpdateTasks(updatedTasks);
+  }
+
+  /// Batch update multiple tasks in database efficiently
+  void _batchUpdateTasks(List<Task> tasks) {
+    Future.microtask(() async {
+      try {
+        // Update all tasks in database without triggering UI updates
+        for (final task in tasks) {
+          await _taskManager.updateTask(task);
+        }
+        AppLogger.info('Batch updated ${tasks.length} tasks');
+      } catch (e) {
+        AppLogger.error('Error batch updating tasks: $e');
+        // Reload tasks from database if batch update fails
+        await loadTasks();
+      }
+    });
+  }
 }

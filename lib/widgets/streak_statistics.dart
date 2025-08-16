@@ -5,15 +5,11 @@ import 'package:unstack/theme/theme.dart';
 class StreakStatistics extends StatelessWidget {
   final int currentStreak;
   final int longestStreak;
-  final int totalCompletedDays;
-  final double monthCompletionPercentage;
 
   const StreakStatistics({
     super.key,
     required this.currentStreak,
     required this.longestStreak,
-    required this.totalCompletedDays,
-    required this.monthCompletionPercentage,
   });
 
   @override
@@ -85,8 +81,8 @@ class StreakStatistics extends StatelessWidget {
                 Expanded(
                   child: _StreakCard(
                     title: 'Current Streak',
-                    value: longestStreak.toString(),
-                    subtitle: longestStreak == 1 ? 'day' : 'days',
+                    value: currentStreak.toString(),
+                    subtitle: currentStreak == 1 ? 'day' : 'days',
                     icon: CupertinoIcons.flame_fill,
                     color: AppColors.accentOrange,
                   ),

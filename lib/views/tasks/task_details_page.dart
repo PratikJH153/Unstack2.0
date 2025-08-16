@@ -3,13 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+
 import 'package:unstack/models/tasks/task.model.dart';
+import 'package:unstack/providers/streak_provider.dart';
 import 'package:unstack/providers/task_provider.dart';
 import 'package:unstack/theme/theme.dart';
 import 'package:unstack/routes/route.dart';
 import 'package:unstack/widgets/delete_task_dialog.dart';
 import 'package:unstack/widgets/home_app_bar_button.dart';
-import 'dart:math' as math;
+
+import 'package:unstack/widgets/task_due_widget.dart';
 
 class TaskDetailsPage extends StatefulWidget {
   final String heroTag;
@@ -29,161 +32,161 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
     with TickerProviderStateMixin {
   late Task _currentTask;
 
-  // Animation controllers for the completion sequence
-  late AnimationController _holdProgressController;
-  late AnimationController _radialExpansionController;
-  late AnimationController _burstController;
+  // // Animation controllers for the completion sequence
+  // late AnimationController _holdProgressController;
+  // late AnimationController _radialExpansionController;
+  // late AnimationController _burstController;
 
-  // Animations
-  late Animation<double> _holdProgressAnimation;
-  late Animation<double> _radialExpansionAnimation;
-  late Animation<double> _burstAnimation;
+  // // Animations
+  // late Animation<double> _holdProgressAnimation;
+  // late Animation<double> _radialExpansionAnimation;
+  // late Animation<double> _burstAnimation;
 
-  // State variables
-  bool _isHolding = false;
-  bool _isCompleting = false;
-  bool _isCompleted = false;
+  // // State variables
+  // bool _isHolding = false;
+  // bool _isCompleting = false;
+  // bool _isCompleted = false;
 
-  @override
-  void initState() {
-    super.initState();
+  // @override
+  // void initState() {
+  //   super.initState();
 
-    _initializeAnimations();
-  }
+  //   _initializeAnimations();
+  // }
 
-  void _initializeAnimations() {
-    // Hold progress animation (3 seconds)
-    _holdProgressController = AnimationController(
-      duration: AnimationConstants.holdToComplete,
-      vsync: this,
-    );
+  // void _initializeAnimations() {
+  //   // Hold progress animation (3 seconds)
+  //   _holdProgressController = AnimationController(
+  //     duration: AnimationConstants.holdToComplete,
+  //     vsync: this,
+  //   );
 
-    // Radial expansion animation (1 second)
-    _radialExpansionController = AnimationController(
-      duration: AnimationConstants.slow,
-      vsync: this,
-    );
+  //   // Radial expansion animation (1 second)
+  //   _radialExpansionController = AnimationController(
+  //     duration: AnimationConstants.slow,
+  //     vsync: this,
+  //   );
 
-    // Burst animation (0.5 seconds)
-    _burstController = AnimationController(
-      duration: AnimationConstants.standard,
-      vsync: this,
-    );
+  //   // Burst animation (0.5 seconds)
+  //   _burstController = AnimationController(
+  //     duration: AnimationConstants.standard,
+  //     vsync: this,
+  //   );
 
-    // Create animations with curves
-    _holdProgressAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _holdProgressController,
-      curve: AnimationConstants.linearCurve,
-    ));
+  //   // Create animations with curves
+  //   _holdProgressAnimation = Tween<double>(
+  //     begin: 0.0,
+  //     end: 1.0,
+  //   ).animate(CurvedAnimation(
+  //     parent: _holdProgressController,
+  //     curve: AnimationConstants.linearCurve,
+  //   ));
 
-    _radialExpansionAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _radialExpansionController,
-      curve: AnimationConstants.standardCurve,
-    ));
+  //   _radialExpansionAnimation = Tween<double>(
+  //     begin: 0.0,
+  //     end: 1.0,
+  //   ).animate(CurvedAnimation(
+  //     parent: _radialExpansionController,
+  //     curve: AnimationConstants.standardCurve,
+  //   ));
 
-    _burstAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _burstController,
-      curve: AnimationConstants.standardCurve,
-    ));
+  //   _burstAnimation = Tween<double>(
+  //     begin: 0.0,
+  //     end: 1.0,
+  //   ).animate(CurvedAnimation(
+  //     parent: _burstController,
+  //     curve: AnimationConstants.standardCurve,
+  //   ));
 
-    // Add listeners
-    _holdProgressController.addStatusListener(_onHoldProgressStatusChanged);
-    _radialExpansionController
-        .addStatusListener(_onRadialExpansionStatusChanged);
-    _burstController.addStatusListener(_onBurstStatusChanged);
-  }
+  //   // Add listeners
+  //   _holdProgressController.addStatusListener(_onHoldProgressStatusChanged);
+  //   _radialExpansionController
+  //       .addStatusListener(_onRadialExpansionStatusChanged);
+  //   _burstController.addStatusListener(_onBurstStatusChanged);
+  // }
 
-  @override
-  void dispose() {
-    _holdProgressController.dispose();
-    _radialExpansionController.dispose();
-    _burstController.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   _holdProgressController.dispose();
+  //   _radialExpansionController.dispose();
+  //   _burstController.dispose();
+  //   super.dispose();
+  // }
 
-  // Animation status listeners
-  void _onHoldProgressStatusChanged(AnimationStatus status) {
-    if (status == AnimationStatus.completed && _isHolding) {
-      _startRadialExpansion();
-    }
-  }
+  // // Animation status listeners
+  // void _onHoldProgressStatusChanged(AnimationStatus status) {
+  //   if (status == AnimationStatus.completed && _isHolding) {
+  //     _startRadialExpansion();
+  //   }
+  // }
 
-  void _onRadialExpansionStatusChanged(AnimationStatus status) {
-    if (status == AnimationStatus.completed) {
-      _startBurstAndComplete();
-    }
-  }
+  // void _onRadialExpansionStatusChanged(AnimationStatus status) {
+  //   if (status == AnimationStatus.completed) {
+  //     _startBurstAndComplete();
+  //   }
+  // }
 
-  void _onBurstStatusChanged(AnimationStatus status) {
-    if (status == AnimationStatus.completed) {
-      _finishCompletion();
-    }
-  }
+  // void _onBurstStatusChanged(AnimationStatus status) {
+  //   if (status == AnimationStatus.completed) {
+  //     _finishCompletion();
+  //   }
+  // }
 
-  // Completion sequence methods
-  void _startHoldProgress() {
-    if (_currentTask.isCompleted || _isCompleting) return;
+  // // Completion sequence methods
+  // void _startHoldProgress() {
+  //   if (_currentTask.isCompleted || _isCompleting) return;
 
-    setState(() {
-      _isHolding = true;
-    });
+  //   setState(() {
+  //     _isHolding = true;
+  //   });
 
-    HapticFeedback.lightImpact();
-    _holdProgressController.forward();
-  }
+  //   HapticFeedback.lightImpact();
+  //   _holdProgressController.forward();
+  // }
 
-  void _cancelHoldProgress() {
-    if (!_isHolding || _isCompleting) return;
+  // void _cancelHoldProgress() {
+  //   if (!_isHolding || _isCompleting) return;
 
-    setState(() {
-      _isHolding = false;
-    });
+  //   setState(() {
+  //     _isHolding = false;
+  //   });
 
-    _holdProgressController.reset();
-  }
+  //   _holdProgressController.reset();
+  // }
 
-  void _startRadialExpansion() {
-    setState(() {
-      _isCompleting = true;
-    });
+  // void _startRadialExpansion() {
+  //   setState(() {
+  //     _isCompleting = true;
+  //   });
 
-    HapticFeedback.mediumImpact();
-    _radialExpansionController.forward();
-  }
+  //   HapticFeedback.mediumImpact();
+  //   _radialExpansionController.forward();
+  // }
 
-  void _startBurstAndComplete() {
-    HapticFeedback.heavyImpact();
-    _burstController.forward();
-  }
+  // void _startBurstAndComplete() {
+  //   HapticFeedback.heavyImpact();
+  //   _burstController.forward();
+  // }
 
-  Future<void> _finishCompletion() async {
-    // Mark task as completed
-    final completedTask = _currentTask.copyWith(isCompleted: true);
-    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+  // Future<void> _finishCompletion() async {
+  //   // Mark task as completed
+  //   final completedTask = _currentTask.copyWith(isCompleted: true);
+  //   final taskProvider = Provider.of<TaskProvider>(context, listen: false);
 
-    await taskProvider.updateTask(completedTask);
+  //   await taskProvider.updateTask(completedTask);
 
-    setState(() {
-      _currentTask = completedTask;
-      _isCompleted = true;
-    });
+  //   setState(() {
+  //     _currentTask = completedTask;
+  //     _isCompleted = true;
+  //   });
 
-    // Navigate back after a short delay
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        Navigator.of(context).pop(completedTask);
-      }
-    });
-  }
+  //   // Navigate back after a short delay
+  //   Future.delayed(const Duration(milliseconds: 300), () {
+  //     if (mounted) {
+  //       Navigator.of(context).pop(completedTask);
+  //     }
+  //   });
+  // }
 
   void _navigateToEditTask() async {
     final result = await RouteUtils.pushNamed(
@@ -257,114 +260,155 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                        vertical: AppSpacing.lg,
-                      ),
-                      child: ChicletOutlinedAnimatedButton(
-                        height: 70,
-                        width: double.infinity,
-                        onPressed: () {
-                          HapticFeedback.mediumImpact();
-                        },
-                        backgroundColor: AppColors.whiteColor,
-                        borderColor: AppColors.textMuted,
-                        borderWidth: 2,
-                        buttonType: ChicletButtonTypes.roundedRectangle,
-                        foregroundColor: AppColors.accentPurple,
-                        borderRadius: AppBorderRadius.xxl,
-                        child: GestureDetector(
-                          onTapDown: (_) => _startHoldProgress(),
-                          onTapUp: (_) => _cancelHoldProgress(),
-                          onTapCancel: () => _cancelHoldProgress(),
-                          child: Stack(
-                            children: [
-                              // Linear progress indicator
-                              AnimatedBuilder(
-                                animation: _holdProgressAnimation,
-                                builder: (context, child) {
-                                  return Container(
-                                    width: double.infinity,
-                                    height: 60,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(
-                                          AppBorderRadius.full),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                          AppBorderRadius.full),
-                                      child: Stack(
-                                        children: [
-                                          // Progress fill
-                                          Positioned(
-                                            left: 0,
-                                            top: 0,
-                                            bottom: 0,
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                _holdProgressAnimation.value,
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.topCenter,
-                                                  end: Alignment.bottomCenter,
-                                                  colors: [
-                                                    const Color(0xFF4A90E2)
-                                                        .withValues(alpha: 0.2),
-                                                    const Color(0xFF4A90E2)
-                                                        .withValues(
-                                                            alpha: 0.15),
-                                                    const Color(0xFF4A90E2)
-                                                        .withValues(alpha: 0.1),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              // Button content
-                              Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.check_circle,
-                                      size: 24,
-                                    ),
-                                    SizedBox(width: AppSpacing.sm),
-                                    Text(
-                                      _isHolding
-                                          ? 'Hold to Complete...'
-                                          : 'Press & Hold to Finish',
-                                      style: AppTextStyles.buttonLarge.copyWith(
-                                        color: AppColors.accentPurple,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                    if (!_currentTask.isDueToday)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                          vertical: AppSpacing.lg,
+                        ),
+                        // child: _currentTask.isDueToday
+                        //     ? ChicletOutlinedAnimatedButton(
+                        //         height: 70,
+                        //         width: double.infinity,
+                        //         onPressed: () {
+                        //           HapticFeedback.mediumImpact();
+                        //         },
+                        //         backgroundColor: AppColors.whiteColor,
+                        //         borderColor: AppColors.textMuted,
+                        //         borderWidth: 2,
+                        //         buttonType: ChicletButtonTypes.roundedRectangle,
+                        //         foregroundColor: AppColors.accentPurple,
+                        //         borderRadius: AppBorderRadius.xxl,
+                        //         child: GestureDetector(
+                        //           onTapDown: (_) => _startHoldProgress(),
+                        //           onTapUp: (_) => _cancelHoldProgress(),
+                        //           onTapCancel: () => _cancelHoldProgress(),
+                        //           child: Stack(
+                        //             children: [
+                        //               // Linear progress indicator
+                        //               AnimatedBuilder(
+                        //                 animation: _holdProgressAnimation,
+                        //                 builder: (context, child) {
+                        //                   return Container(
+                        //                     width: double.infinity,
+                        //                     height: 60,
+                        //                     decoration: BoxDecoration(
+                        //                       borderRadius: BorderRadius.circular(
+                        //                           AppBorderRadius.full),
+                        //                     ),
+                        //                     child: ClipRRect(
+                        //                       borderRadius: BorderRadius.circular(
+                        //                           AppBorderRadius.full),
+                        //                       child: Stack(
+                        //                         children: [
+                        //                           // Progress fill
+                        //                           Positioned(
+                        //                             left: 0,
+                        //                             top: 0,
+                        //                             bottom: 0,
+                        //                             width: MediaQuery.of(context)
+                        //                                     .size
+                        //                                     .width *
+                        //                                 _holdProgressAnimation
+                        //                                     .value,
+                        //                             child: Container(
+                        //                               decoration: BoxDecoration(
+                        //                                 gradient: LinearGradient(
+                        //                                   begin:
+                        //                                       Alignment.topCenter,
+                        //                                   end: Alignment
+                        //                                       .bottomCenter,
+                        //                                   colors: [
+                        //                                     const Color(
+                        //                                             0xFF4A90E2)
+                        //                                         .withValues(
+                        //                                             alpha: 0.2),
+                        //                                     const Color(
+                        //                                             0xFF4A90E2)
+                        //                                         .withValues(
+                        //                                             alpha: 0.15),
+                        //                                     const Color(
+                        //                                             0xFF4A90E2)
+                        //                                         .withValues(
+                        //                                             alpha: 0.1),
+                        //                                   ],
+                        //                                 ),
+                        //                               ),
+                        //                             ),
+                        //                           ),
+                        //                         ],
+                        //                       ),
+                        //                     ),
+                        //                   );
+                        //                 },
+                        //               ),
+                        //               // Button content
+                        //               Center(
+                        //                 child: Row(
+                        //                   mainAxisAlignment:
+                        //                       MainAxisAlignment.center,
+                        //                   children: [
+                        //                     Icon(
+                        //                       Icons.check_circle,
+                        //                       size: 24,
+                        //                     ),
+                        //                     SizedBox(width: AppSpacing.sm),
+                        //                     Text(
+                        //                       _isHolding
+                        //                           ? 'Hold to Complete...'
+                        //                           : 'Press & Hold to Finish',
+                        //                       style: AppTextStyles.buttonLarge
+                        //                           .copyWith(
+                        //                         color: AppColors.accentPurple,
+                        //                         fontWeight: FontWeight.w700,
+                        //                         letterSpacing: 0.5,
+                        //                       ),
+                        //                     ),
+                        //                   ],
+                        //                 ),
+                        //               ),
+                        //             ],
+                        //           ),
+                        //         ),
+                        //       )
+                        child: ChicletOutlinedAnimatedButton(
+                          height: 70,
+                          width: double.infinity,
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            final taskProvider = Provider.of<TaskProvider>(
+                                context,
+                                listen: false);
+                            taskProvider.postponeTask(_currentTask);
+
+                            final StreakProvider streakProvider =
+                                Provider.of<StreakProvider>(
+                              context,
+                              listen: false,
+                            );
+
+                            streakProvider.updateStreak(
+                              taskProvider.totalTasksCount,
+                              taskProvider.completedTasksCount,
+                              taskProvider.todaysTasksCompleted,
+                            );
+                          },
+                          backgroundColor: AppColors.whiteColor,
+                          borderColor: AppColors.textMuted,
+                          child: Text(
+                            'Postpone',
+                            style: AppTextStyles.buttonLarge.copyWith(
+                              color: AppColors.redShade,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                       ),
-                    ),
                     // if (!_currentTask.isCompleted) _buildCompletionButton(),
                   ],
                 ),
               ),
-              // Radial expansion overlay
-              if (_isCompleting) _buildRadialExpansionOverlay(),
-              // Burst overlay
-              if (_isCompleted) _buildBurstOverlay(),
             ],
           );
         },
@@ -402,37 +446,43 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Priority Badge
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: _currentTask.priority.color.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(AppBorderRadius.full),
-            border: Border.all(
-              color: _currentTask.priority.color.withValues(alpha: 0.5),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.flag,
-                size: 16,
-                color: _currentTask.priority.color,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
               ),
-              SizedBox(width: 4),
-              Text(
-                _currentTask.priority.label,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: _currentTask.priority.color,
-                  fontWeight: FontWeight.w600,
+              decoration: BoxDecoration(
+                color: _currentTask.priority.color.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                border: Border.all(
+                  color: _currentTask.priority.color.withValues(alpha: 0.5),
+                  width: 1,
                 ),
               ),
-            ],
-          ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.flag,
+                    size: 16,
+                    color: _currentTask.priority.color,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    _currentTask.priority.label,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: _currentTask.priority.color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TaskDueWidget(task: _currentTask),
+          ],
         ),
         SizedBox(height: AppSpacing.md),
         // Task Title
@@ -602,108 +652,109 @@ class _TaskDetailsPageState extends State<TaskDetailsPage>
   }
   */
 
-  Widget _buildRadialExpansionOverlay() {
-    return AnimatedBuilder(
-      animation: _radialExpansionAnimation,
-      builder: (context, child) {
-        final screenSize = MediaQuery.of(context).size;
-        final maxRadius = math.sqrt(
-          math.pow(screenSize.width, 2) + math.pow(screenSize.height, 2),
-        );
+// {  Widget _buildRadialExpansionOverlay() {
+//     return AnimatedBuilder(
+//       animation: _radialExpansionAnimation,
+//       builder: (context, child) {
+//         final screenSize = MediaQuery.of(context).size;
+//         final maxRadius = math.sqrt(
+//           math.pow(screenSize.width, 2) + math.pow(screenSize.height, 2),
+//         );
 
-        return SizedBox(
-          width: double.infinity,
-          height: double.infinity,
-          child: CustomPaint(
-            painter: RadialExpansionPainter(
-              progress: _radialExpansionAnimation.value,
-              maxRadius: maxRadius,
-              color: AppColors.accentGreen,
-            ),
-          ),
-        );
-      },
-    );
-  }
+//         return SizedBox(
+//           width: double.infinity,
+//           height: double.infinity,
+//           child: CustomPaint(
+//             painter: RadialExpansionPainter(
+//               progress: _radialExpansionAnimation.value,
+//               maxRadius: maxRadius,
+//               color: AppColors.accentGreen,
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
 
-  Widget _buildBurstOverlay() {
-    return AnimatedBuilder(
-      animation: _burstAnimation,
-      builder: (context, child) {
-        return SizedBox(
-          width: double.infinity,
-          height: double.infinity,
-          child: CustomPaint(
-            painter: BurstPainter(
-              progress: _burstAnimation.value,
-              color: AppColors.accentGreen,
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
+//   Widget _buildBurstOverlay() {
+//     return AnimatedBuilder(
+//       animation: _burstAnimation,
+//       builder: (context, child) {
+//         return SizedBox(
+//           width: double.infinity,
+//           height: double.infinity,
+//           child: CustomPaint(
+//             painter: BurstPainter(
+//               progress: _burstAnimation.value,
+//               color: AppColors.accentGreen,
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }
 
-// Custom painter for radial expansion animation
-class RadialExpansionPainter extends CustomPainter {
-  final double progress;
-  final double maxRadius;
-  final Color color;
+// // Custom painter for radial expansion animation
+// class RadialExpansionPainter extends CustomPainter {
+//   final double progress;
+//   final double maxRadius;
+//   final Color color;
 
-  RadialExpansionPainter({
-    required this.progress,
-    required this.maxRadius,
-    required this.color,
-  });
+//   RadialExpansionPainter({
+//     required this.progress,
+//     required this.maxRadius,
+//     required this.color,
+//   });
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center =
-        Offset(size.width / 2, size.height - 90); // Start from button area
-    final radius = progress * maxRadius;
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     final center =
+//         Offset(size.width / 2, size.height - 90); // Start from button area
+//     final radius = progress * maxRadius;
 
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.8 * (1 - progress * 0.3))
-      ..style = PaintingStyle.fill;
+//     final paint = Paint()
+//       ..color = color.withValues(alpha: 0.8 * (1 - progress * 0.3))
+//       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(center, radius, paint);
-  }
+//     canvas.drawCircle(center, radius, paint);
+//   }
 
-  @override
-  bool shouldRepaint(RadialExpansionPainter oldDelegate) {
-    return oldDelegate.progress != progress;
-  }
-}
+//   @override
+//   bool shouldRepaint(RadialExpansionPainter oldDelegate) {
+//     return oldDelegate.progress != progress;
+//   }
+// }
 
-// Custom painter for burst animation
-class BurstPainter extends CustomPainter {
-  final double progress;
-  final Color color;
+// // Custom painter for burst animation
+// class BurstPainter extends CustomPainter {
+//   final double progress;
+//   final Color color;
 
-  BurstPainter({
-    required this.progress,
-    required this.color,
-  });
+//   BurstPainter({
+//     required this.progress,
+//     required this.color,
+//   });
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.6 * (1 - progress))
-      ..style = PaintingStyle.fill;
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     final center = Offset(size.width / 2, size.height / 2);
+//     final paint = Paint()
+//       ..color = color.withValues(alpha: 0.6 * (1 - progress))
+//       ..style = PaintingStyle.fill;
 
-    // Draw multiple expanding circles for burst effect
-    for (int i = 0; i < 5; i++) {
-      final radius = progress * (100 + i * 30);
-      final alpha = (1 - progress) * (1 - i * 0.2);
-      paint.color = color.withValues(alpha: alpha.clamp(0.0, 1.0));
-      canvas.drawCircle(center, radius, paint);
-    }
-  }
+//     // Draw multiple expanding circles for burst effect
+//     for (int i = 0; i < 5; i++) {
+//       final radius = progress * (100 + i * 30);
+//       final alpha = (1 - progress) * (1 - i * 0.2);
+//       paint.color = color.withValues(alpha: alpha.clamp(0.0, 1.0));
+//       canvas.drawCircle(center, radius, paint);
+//     }
+//   }
 
-  @override
-  bool shouldRepaint(BurstPainter oldDelegate) {
-    return oldDelegate.progress != progress;
-  }
+//   @override
+//   bool shouldRepaint(BurstPainter oldDelegate) {
+//     return oldDelegate.progress != progress;
+//   }
+// }
 }

@@ -402,7 +402,9 @@ class _ProfileModalSheetState extends State<ProfileModalSheet> {
       backgroundColor: AppColors.backgroundPrimary,
       builder: (BuildContext context) {
         return Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(AppSpacing.lg).copyWith(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
