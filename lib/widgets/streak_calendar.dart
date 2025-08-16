@@ -313,18 +313,7 @@ class _CalendarDayWidget extends StatelessWidget {
                   size: 16,
                 ),
               )
-            else if (hasPartialCompletion)
-              Positioned(
-                bottom: 4,
-                child: Container(
-                  width: 5,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.accentYellow,
-                  ),
-                ),
-              )
+
             // else if (hasData && completionData!.totalTasks > 0)
             //   Positioned(
             //     bottom: 4,

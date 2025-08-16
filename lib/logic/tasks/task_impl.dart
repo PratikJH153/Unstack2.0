@@ -21,8 +21,13 @@ class TaskManager implements ITaskManagerContract {
   }
 
   @override
-  Future<List<Task>> getTasks() async {
-    return await _databaseService.getTasks();
+  Future<List<Task>> getRemainingTasks() async {
+    return await _databaseService.getRemainingTasks();
+  }
+
+  @override
+  Future<List<Task>> getPendingTasks() async {
+    return await _databaseService.getPendingTasks();
   }
 
   @override
@@ -42,7 +47,15 @@ class TaskManager implements ITaskManagerContract {
 
   @override
   Future<List<Task>> getCompletedTasks() async {
-    final tasks = await _databaseService.getTodayTasks();
-    return tasks.where((task) => task.isCompleted).toList();
+    final tasks = await _databaseService.getCompletedTasks();
+    final year = DateTime.now();
+    return tasks
+        .where((task) =>
+            task.isCompleted &&
+            task.completedAt != null &&
+            task.completedAt!.year == year.year &&
+            task.completedAt!.month == year.month &&
+            task.completedAt!.day == year.day)
+        .toList();
   }
 }

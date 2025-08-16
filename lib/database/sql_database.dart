@@ -11,6 +11,7 @@ class TaskTable {
   static String columnPriority = "priority";
   static String columnPriorityIndex = "priorityIndex";
   static String columnCreatedAt = "createdAt";
+  static String columnCompletedAt = "completedAt";
   static String columnIsCompleted = "isCompleted";
 }
 
@@ -59,6 +60,7 @@ class DatabaseService {
         ${TaskTable.columnDescription} TEXT,
         ${TaskTable.columnPriority} TEXT NOT NULL,
         ${TaskTable.columnCreatedAt} TEXT NOT NULL,
+        ${TaskTable.columnCompletedAt} TEXT,
         ${TaskTable.columnIsCompleted} INTEGER NOT NULL,
         ${TaskTable.columnPriorityIndex} INTEGER NOT NULL
       )
@@ -104,13 +106,15 @@ class DatabaseService {
     await deleteDatabase(path);
   }
 
-  Future<List<Task>> getTodayTasks() async {
+  Future<List<Task>> getRemainingTasks() async {
     final Database? db = await this.db;
     final today = DateTime.now();
     final results = await db!.query(
       TaskTable.table,
-      where: "strftime('%Y-%m-%d', ${TaskTable.columnCreatedAt}) = ?",
+      where:
+          "strftime('%Y-%m-%d', ${TaskTable.columnCreatedAt}) = ? AND ${TaskTable.columnIsCompleted} = 0",
       whereArgs: [today.toIso8601String().split('T')[0]],
+      orderBy: '${TaskTable.columnPriorityIndex} ASC',
     );
     final tasks = results.map((result) => Task.fromJson(result)).toList();
     return tasks;
@@ -131,6 +135,30 @@ class DatabaseService {
     });
     AppLogger.info('Loaded $tasks tasks');
 
+    return tasks;
+  }
+
+  Future<List<Task>> getPendingTasks() async {
+    final Database? db = await this.db;
+    final results = await db!.query(
+      TaskTable.table,
+      where: '${TaskTable.columnIsCompleted} = 0 AND '
+          'strftime(\'%Y-%m-%d\', ${TaskTable.columnCreatedAt}) < ?',
+      whereArgs: [DateTime.now().toIso8601String().split('T')[0]],
+      orderBy: '${TaskTable.columnPriorityIndex} ASC',
+    );
+    final tasks = results.map((result) => Task.fromJson(result)).toList();
+    return tasks;
+  }
+
+  Future<List<Task>> getCompletedTasks() async {
+    final Database? db = await this.db;
+    final results = await db!.query(
+      TaskTable.table,
+      where: '${TaskTable.columnIsCompleted} = 1',
+      orderBy: '${TaskTable.columnCompletedAt} DESC',
+    );
+    final tasks = results.map((result) => Task.fromJson(result)).toList();
     return tasks;
   }
 
@@ -192,20 +220,37 @@ class DatabaseService {
   /// Insert or update streak data for a specific date
   Future<void> insertOrUpdateStreakData(Map<String, dynamic> streakData) async {
     final db = await instance.db;
-    await db?.update(
+    final date = streakData['date'] as String;
+
+    // Check if record exists for this date
+    final existing = await db?.query(
       StreakTable.table,
-      streakData,
       where: '${StreakTable.columnDate} = ?',
-      whereArgs: [streakData[StreakTable.columnDate]],
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      whereArgs: [date],
+      limit: 1,
     );
+
+    if (existing != null && existing.isNotEmpty) {
+      // Update existing record
+      await db?.update(
+        StreakTable.table,
+        streakData,
+        where: '${StreakTable.columnDate} = ?',
+        whereArgs: [date],
+      );
+    } else {
+      // Insert new record
+      await db?.insert(StreakTable.table, streakData);
+    }
   }
 
   /// Get all streak completion history
   Future<List<Map<String, dynamic>>> getStreakHistory() async {
     final db = await instance.db;
-    final result = await db?.query(StreakTable.table,
-        orderBy: '${StreakTable.columnDate} DESC');
+    final result = await db?.query(
+      StreakTable.table,
+      orderBy: '${StreakTable.columnDate} DESC',
+    );
     return result ?? [];
   }
 
@@ -236,12 +281,22 @@ class DatabaseService {
     final db = await instance.db;
     final result = await db?.query(
       StreakTable.table,
-      columns: [StreakTable.columnCurrentStreak],
       orderBy: '${StreakTable.columnDate} DESC',
       limit: 1,
     );
 
     if (result == null || result.isEmpty) return 0;
+
+    final yesterday = DateTime.now().subtract(Duration(days: 1));
+    final today = DateTime.now();
+    if (result.first[StreakTable.columnDate] ==
+        today.toIso8601String().split('T')[0]) {
+      return result.first[StreakTable.columnCurrentStreak] as int? ?? 0;
+    } else if (result.first[StreakTable.columnDate] !=
+        yesterday.toIso8601String().split('T')[0]) {
+      return 0;
+    }
+
     return result.first[StreakTable.columnCurrentStreak] as int? ?? 0;
   }
 
@@ -250,40 +305,21 @@ class DatabaseService {
     final db = await instance.db;
     final result = await db?.query(
       StreakTable.table,
-      columns: ['MAX(${StreakTable.columnLongestStreak}) as maxStreak'],
+      orderBy: '${StreakTable.columnDate} DESC',
+      limit: 1,
     );
 
     if (result == null || result.isEmpty) return 0;
-    return result.first['maxStreak'] as int? ?? 0;
-  }
+    final yesterday = DateTime.now().subtract(Duration(days: 1));
+    final today = DateTime.now();
+    if (result.first[StreakTable.columnDate] ==
+        today.toIso8601String().split('T')[0]) {
+      return result.first[StreakTable.columnLongestStreak] as int? ?? 0;
+    } else if (result.first[StreakTable.columnDate] !=
+        yesterday.toIso8601String().split('T')[0]) {
+      return 0;
+    }
 
-  /// Get total completed days count
-  Future<int> getTotalCompletedDaysFromDB() async {
-    final db = await instance.db;
-    final result = await db?.query(
-      StreakTable.table,
-      where: '${StreakTable.columnAllTasksCompleted} = ?',
-      whereArgs: [1],
-    );
-
-    return result?.length ?? 0;
-  }
-
-  /// Update streak counters in the database
-  Future<void> updateStreakCounters(
-      int currentStreak, int longestStreak) async {
-    final db = await instance.db;
-    final today = DateTime.now().toIso8601String().split('T')[0];
-
-    // Update the most recent record with new streak values
-    await db?.update(
-      StreakTable.table,
-      {
-        StreakTable.columnCurrentStreak: currentStreak,
-        StreakTable.columnLongestStreak: longestStreak,
-      },
-      where: '${StreakTable.columnDate} = ?',
-      whereArgs: [today],
-    );
+    return result.first[StreakTable.columnLongestStreak] as int? ?? 0;
   }
 }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:unstack/helper/date_format.dart';
 import 'package:unstack/models/tasks/task.model.dart';
+import 'package:unstack/providers/streak_provider.dart';
+import 'package:unstack/providers/task_provider.dart';
 import 'package:unstack/theme/theme.dart';
 
 class TaskCard extends StatefulWidget {
@@ -101,9 +105,7 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
                     ],
                   ),
                   border: Border.all(
-                    color: widget.task.isCompleted
-                        ? AppColors.statusSuccess.withValues(alpha: 0.3)
-                        : AppColors.glassBorder,
+                    color: AppColors.glassBorder,
                     width: 1,
                   ),
                   boxShadow: [
@@ -117,40 +119,53 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            widget.task.priority.color.withValues(alpha: 0.2),
-                        borderRadius:
-                            BorderRadius.circular(AppBorderRadius.full),
-                        border: Border.all(
-                          color:
-                              widget.task.priority.color.withValues(alpha: 0.5),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.flag,
-                            size: 12,
-                            color: widget.task.priority.color,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: AppSpacing.xs,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            widget.task.priority.label,
-                            style: AppTextStyles.caption.copyWith(
-                              color: widget.task.priority.color,
-                              fontWeight: FontWeight.w600,
+                          decoration: BoxDecoration(
+                            color: widget.task.priority.color
+                                .withValues(alpha: 0.2),
+                            borderRadius:
+                                BorderRadius.circular(AppBorderRadius.full),
+                            border: Border.all(
+                              color: widget.task.priority.color
+                                  .withValues(alpha: 0.5),
+                              width: 1,
                             ),
                           ),
-                        ],
-                      ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.flag,
+                                size: 12,
+                                color: widget.task.priority.color,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                widget.task.priority.label,
+                                style: AppTextStyles.caption.copyWith(
+                                  color: widget.task.priority.color,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          widget.task.isDueToday
+                              ? 'Today'
+                              : daysAgo(widget.task.createdAt),
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(
                       height: AppSpacing.sm,
@@ -179,6 +194,36 @@ class _TaskCardState extends State<TaskCard> with TickerProviderStateMixin {
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    if (!widget.task.isDueToday && !widget.task.isCompleted)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.sm),
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            final taskProvider = Provider.of<TaskProvider>(
+                                context,
+                                listen: false);
+                            taskProvider.postponeTask(widget.task);
+                            final StreakProvider streakProvider =
+                                Provider.of<StreakProvider>(
+                              context,
+                              listen: false,
+                            );
+
+                            streakProvider.updateStreak(
+                              taskProvider.totalTasksCount,
+                              taskProvider.completedTasksCount,
+                              taskProvider.todaysTasksCompleted,
+                            );
+                          },
+                          child: Text(
+                            'Postpone',
+                            style: AppTextStyles.buttonMedium.copyWith(
+                              color: AppColors.accentRed,
+                            ),
+                          ),
                         ),
                       ),
                   ],

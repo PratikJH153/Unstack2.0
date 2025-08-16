@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:provider/provider.dart';
 import 'package:unstack/models/tasks/task.model.dart';
+import 'package:unstack/providers/streak_provider.dart';
 import 'package:unstack/providers/task_provider.dart';
 import 'package:unstack/routes/route.dart';
 import 'package:unstack/theme/theme.dart';
@@ -11,32 +12,48 @@ import 'package:unstack/widgets/buildScrollableWithFade.dart';
 import 'package:unstack/widgets/delete_task_dialog.dart';
 import 'package:unstack/widgets/task_card.dart';
 
-class TaskList extends StatefulWidget {
+class TaskList extends StatelessWidget {
   final List<Task> tasks;
-  final bool isCompletedList;
+  final IconData icon;
+  final String title;
+  final String description;
+  final bool canReorder;
   final Function onTaskReorder;
-  const TaskList(
-      {required this.tasks,
-      required this.isCompletedList,
-      required this.onTaskReorder,
-      super.key});
+  final bool showEdit;
 
-  @override
-  State<TaskList> createState() => _TaskListState();
-}
+  const TaskList({
+    required this.tasks,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.canReorder,
+    required this.onTaskReorder,
+    required this.showEdit,
+    super.key,
+  });
 
-class _TaskListState extends State<TaskList> {
-  Future<void> _toggleTaskCompletion(Task task, bool isCompleted) async {
+  Future<void> _toggleTaskCompletion(
+      BuildContext context, Task task, bool isCompleted) async {
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     if (isCompleted) {
       await taskProvider.markTaskAsCompleted(task);
     } else {
       await taskProvider.markTaskAsIncomplete(task);
     }
+    if (context.mounted) {
+      final StreakProvider streakProvider =
+          Provider.of<StreakProvider>(context, listen: false);
+
+      streakProvider.updateStreak(
+        taskProvider.totalTasksCount,
+        taskProvider.completedTasksCount,
+        taskProvider.todaysTasksCompleted,
+      );
+    }
     HapticFeedback.mediumImpact();
   }
 
-  Future<void> _deleteTask(Task task) async {
+  Future<void> _deleteTask(BuildContext context, Task task) async {
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     await taskProvider.deleteTask(task.id);
     HapticFeedback.heavyImpact();
@@ -44,7 +61,7 @@ class _TaskListState extends State<TaskList> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.tasks.isEmpty) {
+    if (tasks.isEmpty) {
       return noTasksWidget().scaleInStandard(
         delay: AnimationConstants.longDelay,
         scale: AnimationConstants.largeScale,
@@ -53,8 +70,7 @@ class _TaskListState extends State<TaskList> {
 
     return buildScrollableWithFade(
       child: ReorderableListView.builder(
-        onReorder: (oldIndex, newIndex) =>
-            widget.onTaskReorder(oldIndex, newIndex),
+        onReorder: (oldIndex, newIndex) => onTaskReorder(oldIndex, newIndex),
         padding: const EdgeInsets.only(
           bottom: AppSpacing.lg,
         ),
@@ -70,27 +86,37 @@ class _TaskListState extends State<TaskList> {
             child: child,
           );
         },
-        itemCount: widget.tasks.length,
+        itemCount: tasks.length,
         itemBuilder: (context, index) {
-          final task = widget.tasks[index];
+          final task = tasks[index];
           return Slidable(
             key: Key(task.id),
             startActionPane: ActionPane(
-              motion: const ScrollMotion(),
-              children: [
-                SlidableAction(
-                  onPressed: (context) async {
-                    HapticFeedback.heavyImpact();
-                    await _toggleTaskCompletion(task, !task.isCompleted);
-                  },
-                  backgroundColor: AppColors.accentGreen,
-                  foregroundColor: AppColors.whiteColor,
-                  borderRadius: BorderRadius.all(Radius.circular(24)),
-                  icon: CupertinoIcons.check_mark,
-
-                  // label: 'Edit',
+              motion: Padding(
+                padding: const EdgeInsets.only(
+                  top: 10.0,
+                  bottom: 10,
+                  right: 12,
                 ),
-              ],
+                child: Row(
+                  children: [
+                    SlidableAction(
+                      onPressed: (context) async {
+                        HapticFeedback.heavyImpact();
+                        await _toggleTaskCompletion(
+                            context, task, !task.isCompleted);
+                      },
+                      backgroundColor: AppColors.accentGreen,
+                      foregroundColor: AppColors.whiteColor,
+                      borderRadius: BorderRadius.all(Radius.circular(24)),
+                      icon: CupertinoIcons.check_mark,
+
+                      // label: 'Edit',
+                    ),
+                  ],
+                ),
+              ),
+              children: [],
             ),
             endActionPane: ActionPane(
               motion: Padding(
@@ -101,7 +127,7 @@ class _TaskListState extends State<TaskList> {
                 ),
                 child: Row(
                   children: [
-                    if (!widget.isCompletedList)
+                    if (showEdit)
                       SlidableAction(
                         onPressed: (context) async {
                           HapticFeedback.heavyImpact();
@@ -131,7 +157,7 @@ class _TaskListState extends State<TaskList> {
                         await showDeleteDialog(
                               context: context,
                               onDelete: () async {
-                                _deleteTask(task);
+                                _deleteTask(context, task);
                                 if (context.mounted) {
                                   Navigator.of(context).pop(true);
                                 }
@@ -157,7 +183,7 @@ class _TaskListState extends State<TaskList> {
             child: TaskCard(
               task: task,
               onToggleComplete: (isCompleted) =>
-                  _toggleTaskCompletion(task, isCompleted),
+                  _toggleTaskCompletion(context, task, isCompleted),
               onTap: () {
                 RouteUtils.pushNamed(
                   context,
@@ -181,26 +207,20 @@ class _TaskListState extends State<TaskList> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            widget.isCompletedList
-                ? CupertinoIcons.check_mark_circled
-                : CupertinoIcons.circle,
+            icon,
             size: 64,
             color: AppColors.textMuted,
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            widget.isCompletedList
-                ? 'No completed tasks yet'
-                : 'No remaining tasks',
+            title,
             style: AppTextStyles.h3.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            widget.isCompletedList
-                ? 'Complete some tasks to see them here'
-                : 'All tasks completed! Great job!',
+            description,
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textMuted,
             ),
