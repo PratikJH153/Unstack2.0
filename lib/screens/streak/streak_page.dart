@@ -93,7 +93,7 @@ class _StreakPageState extends State<StreakPage> {
                                   builder: (context, streakProvider, child) {
                                     return StreakStatistics(
                                       currentStreak:
-                                          streakProvider.currentStreak,
+                                          streakProvider.yesterdayStreak,
                                       longestStreak:
                                           streakProvider.longestStreak,
                                     ).slideUpStandard(

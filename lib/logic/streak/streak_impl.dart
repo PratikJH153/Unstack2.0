@@ -13,16 +13,33 @@ class StreakManager implements IStreakManagerContract {
     bool allTodayTasksCompleted,
   ) async {
     final today = DateTime.now();
+    final yesterday = today.subtract(Duration(days: 1));
     try {
+      final yesterdayData = await _databaseService
+          .getStreakDataForDate(yesterday.toIso8601String().split('T')[0]);
       // Calculate current and longest streaks based on the new completion status
       final currentStreak = await _databaseService.getCurrentStreakFromDB();
       final existingLongestStreak =
           await _databaseService.getLongestStreakFromDB();
 
-      final newStreak =
-          allTodayTasksCompleted ? currentStreak + 1 : currentStreak - 1;
-      final longestStreak =
-          newStreak > existingLongestStreak ? newStreak : existingLongestStreak;
+      final newStreak = allTodayTasksCompleted
+          ? (yesterdayData != null ? yesterdayData['currentStreak'] + 1 : 1)
+          : 0;
+
+      int longestStreak;
+      if (allTodayTasksCompleted) {
+        // Did we set a new record?
+        longestStreak = newStreak > existingLongestStreak
+            ? newStreak
+            : existingLongestStreak;
+      } else {
+        // Broke streak today
+        longestStreak = (currentStreak == existingLongestStreak)
+            ? existingLongestStreak - 1
+            : existingLongestStreak;
+      }
+
+      longestStreak = longestStreak < 0 ? 0 : longestStreak;
 
       final streakData = {
         'date': today.toIso8601String().split('T')[0],
@@ -101,6 +118,35 @@ class StreakManager implements IStreakManagerContract {
     } catch (e) {
       AppLogger.error('Error removing streak for date: $e');
       rethrow;
+    }
+  }
+
+  @override
+  Future<bool> hasStreakForToday() async {
+    try {
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      final Map<String, dynamic>? streakData =
+          await _databaseService.getStreakDataForDate(today);
+      if (streakData == null) {
+        return Future.value(false);
+      } else {
+        return Future.value(
+          (streakData['allTasksCompleted'] as int) == 1,
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Error checking streak for today: $e');
+      return Future.value(false);
+    }
+  }
+
+  Future<Map<String, dynamic>?> getStreakDataForDate(DateTime date) async {
+    try {
+      final dateString = date.toIso8601String().split('T')[0];
+      return await _databaseService.getStreakDataForDate(dateString);
+    } catch (e) {
+      AppLogger.error('Error getting streak data for date $date: $e');
+      return null;
     }
   }
 }

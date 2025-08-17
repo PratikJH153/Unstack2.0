@@ -5,5 +5,6 @@ class AppBorderRadius {
   static const double xl = 16.0;
   static const double xxl = 24.0;
   static const double xxxl = 36.0;
+  static const double xxxxl = 42.0;
   static const double full = 999.0;
 }

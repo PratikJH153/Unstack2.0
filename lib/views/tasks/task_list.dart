@@ -20,6 +20,7 @@ class TaskList extends StatelessWidget {
   final bool canReorder;
   final Function onTaskReorder;
   final bool showEdit;
+  final bool updateStreak;
 
   const TaskList({
     required this.tasks,
@@ -29,6 +30,7 @@ class TaskList extends StatelessWidget {
     required this.canReorder,
     required this.onTaskReorder,
     required this.showEdit,
+    this.updateStreak = true,
     super.key,
   });
 
@@ -40,7 +42,7 @@ class TaskList extends StatelessWidget {
     } else {
       await taskProvider.markTaskAsIncomplete(task);
     }
-    if (context.mounted) {
+    if (context.mounted && updateStreak) {
       final StreakProvider streakProvider =
           Provider.of<StreakProvider>(context, listen: false);
 
