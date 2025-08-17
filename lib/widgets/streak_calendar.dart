@@ -286,7 +286,7 @@ class _CalendarDayWidget extends StatelessWidget {
                 child: Transform.rotate(
                   angle: 90,
                   child: _CalendarProgressIndicator(
-                    progress: completionData!.completionPercentage / 100 + 0.5,
+                    progress: completionData!.completionPercentage,
                     size: 36,
                   ),
                 ),

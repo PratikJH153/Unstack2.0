@@ -111,7 +111,7 @@ class _TasksListPageState extends State<TasksListPage>
                               children: [
                                 Positioned(
                                   top: 5,
-                                  right: 1,
+                                  right: 0,
                                   child: Text(
                                     pendingTasks.length.toString(),
                                     style: TextStyle(
@@ -165,6 +165,7 @@ class _TasksListPageState extends State<TasksListPage>
                               showEdit: true,
                               onTaskReorder: (oldIndex, newIndex) {},
                               canReorder: false,
+                              updateStreak: false,
                               icon: CupertinoIcons.exclamationmark_circle,
                               title: 'No pending tasks',
                               description: 'All tasks completed! Great job!',

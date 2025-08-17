@@ -287,16 +287,6 @@ class DatabaseService {
 
     if (result == null || result.isEmpty) return 0;
 
-    final yesterday = DateTime.now().subtract(Duration(days: 1));
-    final today = DateTime.now();
-    if (result.first[StreakTable.columnDate] ==
-        today.toIso8601String().split('T')[0]) {
-      return result.first[StreakTable.columnCurrentStreak] as int? ?? 0;
-    } else if (result.first[StreakTable.columnDate] !=
-        yesterday.toIso8601String().split('T')[0]) {
-      return 0;
-    }
-
     return result.first[StreakTable.columnCurrentStreak] as int? ?? 0;
   }
 
@@ -310,15 +300,6 @@ class DatabaseService {
     );
 
     if (result == null || result.isEmpty) return 0;
-    final yesterday = DateTime.now().subtract(Duration(days: 1));
-    final today = DateTime.now();
-    if (result.first[StreakTable.columnDate] ==
-        today.toIso8601String().split('T')[0]) {
-      return result.first[StreakTable.columnLongestStreak] as int? ?? 0;
-    } else if (result.first[StreakTable.columnDate] !=
-        yesterday.toIso8601String().split('T')[0]) {
-      return 0;
-    }
 
     return result.first[StreakTable.columnLongestStreak] as int? ?? 0;
   }

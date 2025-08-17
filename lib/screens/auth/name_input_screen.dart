@@ -84,13 +84,13 @@ class _NameInputScreenState extends State<NameInputScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      resizeToAvoidBottomInset: false,
       floatingActionButton: // Continue button
           !Provider.of<AuthProvider>(context).isLoading
               ? Container(
                   height: 80,
                   margin: EdgeInsets.symmetric(
                     horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.md,
                   ),
                   width: double.infinity,
                   child: ChicletOutlinedAnimatedButton(

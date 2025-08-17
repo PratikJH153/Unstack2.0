@@ -38,7 +38,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String _userName = '';
   late ConfettiController _confettiController;
-  bool isStreak = false;
 
   @override
   void initState() {
@@ -59,21 +58,14 @@ class _HomePageState extends State<HomePage> {
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
     final streakProvider = Provider.of<StreakProvider>(context, listen: false);
 
-    // Wait a bit for the TaskProvider to update its state and database operations to complete
-    await Future.delayed(Duration(milliseconds: 500));
-
-    // Check if all today's tasks are completed
+    await Future.delayed(Duration(milliseconds: 300));
     if (taskProvider.todaysTasksCompleted) {
-      AppLogger.info('All today\'s tasks completed! Reloading streak data...');
-
-      // Reload streak data to get the updated streak count
       await streakProvider.refreshStreakData();
 
       AppLogger.info('New streak count: ${streakProvider.currentStreak}');
 
-      // Show streak overlay with the new streak count (check mounted)
       if (mounted) {
-        showStreakOverlay(context, streakProvider.currentStreak + 1);
+        showStreakOverlay(context, streakProvider.currentStreak);
       }
     } else {
       AppLogger.info('Not all today\'s tasks are completed yet');
@@ -125,13 +117,11 @@ class _HomePageState extends State<HomePage> {
   ) {
     final visibleTasks = List<Task>.from(taskProvider.remainingTasks);
 
-    // Sort by completion status first (incomplete tasks first), then by priorityIndex
     visibleTasks.sort((a, b) {
-      // First, sort by completion status (incomplete tasks first)
       if (a.isCompleted != b.isCompleted) {
         return a.isCompleted ? 1 : -1;
       }
-      // Then sort by priorityIndex for tasks with same completion status
+
       return a.priorityIndex.compareTo(b.priorityIndex);
     });
 
@@ -320,7 +310,7 @@ class _HomePageState extends State<HomePage> {
         Consumer<StreakProvider>(
           builder: (context, streakProvider, child) {
             return StreakWidget(
-              currentStreak: streakProvider.currentStreak,
+              currentStreak: streakProvider.yesterdayStreak,
             ).slideDownStandard(
               delay: AnimationConstants.mediumDelay,
             );

@@ -115,9 +115,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ).fadeInStandard(delay: AnimationConstants.mediumDelay),
                 const SizedBox(height: AppSpacing.lg),
-                SizedBox(
+                Container(
                   height: 80 * (AppSize(context).height / 860),
                   width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: ChicletOutlinedAnimatedButton(
                     onPressed: _nextPage,
                     backgroundColor: _currentPage == onboardingData.length - 1

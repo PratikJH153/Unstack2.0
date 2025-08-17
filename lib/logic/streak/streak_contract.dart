@@ -8,6 +8,7 @@ abstract class IStreakManagerContract {
   );
 
   Future<void> removeStreakForDate(DateTime date);
+  Future<bool> hasStreakForToday();
   Future<List<StreakModel>> getCompletionHistory();
   Future<int> getCurrentStreak();
   Future<int> getLongestStreak();

@@ -16,12 +16,15 @@ class StreakProvider extends ChangeNotifier {
   List<StreakModel> _completionHistory = [];
   int _currentStreak = 0;
   int _longestStreak = 0;
+  int _yesterdayStreak = 0;
   String? _errorMessage;
 
   // Getters
   List<StreakModel> get completionHistory =>
       List.unmodifiable(_completionHistory);
   int get currentStreak => _currentStreak;
+  int get yesterdayStreak =>
+      _currentStreak < _yesterdayStreak ? _yesterdayStreak : _currentStreak;
   int get longestStreak => _longestStreak;
   String? get errorMessage => _errorMessage;
 
@@ -51,13 +54,23 @@ class StreakProvider extends ChangeNotifier {
 
       final history = await _streakManager.getCompletionHistory();
       _completionHistory = history;
+      final today = DateTime.now();
+      final todayStreak = await _streakManager.getStreakDataForDate(today);
 
-      final newCurrentStreak = await _streakManager.getCurrentStreak();
       final newLongestStreak = await _streakManager.getLongestStreak();
+      final yesterday = DateTime.now().subtract(Duration(days: 1));
+      final yesterdayData =
+          await _streakManager.getStreakDataForDate(yesterday);
 
       // Update values and notify listeners
-      _currentStreak = newCurrentStreak;
       _longestStreak = newLongestStreak;
+      _yesterdayStreak =
+          yesterdayData != null ? yesterdayData['currentStreak'] : 0;
+      _currentStreak = todayStreak != null
+          ? todayStreak['currentStreak'] > _yesterdayStreak
+              ? todayStreak['currentStreak']
+              : yesterdayStreak
+          : 0;
 
       notifyListeners();
 
